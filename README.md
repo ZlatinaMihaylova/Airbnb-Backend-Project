@@ -1,1 +1,3 @@
-# Airbnb-Backend-Project
+# ITTalentsFinalProject
+Airbnb backend
+![Database](database.PNG)
