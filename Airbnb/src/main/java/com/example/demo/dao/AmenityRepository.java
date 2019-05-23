@@ -6,10 +6,12 @@ import org.springframework.stereotype.Repository;
 
 import com.example.demo.model.Amenity;
 
+import java.util.Optional;
+
 @Repository
 public interface AmenityRepository extends JpaRepository<Amenity, Integer>{
 
-    Amenity findById(long id);
-    Amenity findByName(String name);
+    Optional<Amenity> findById(long id);
+    Optional<Amenity> findByName(String name);
 
 }

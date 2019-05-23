@@ -5,10 +5,12 @@ import org.springframework.stereotype.Repository;
 
 import com.example.demo.model.City;
 
+import java.util.Optional;
+
 @Repository
 public interface CityRepository extends JpaRepository<City, Integer>{
 
-	City findById(long id);
-	City findByName(String name);
+	Optional<City> findById(long id);
+	Optional<City> findByName(String name);
 
 }

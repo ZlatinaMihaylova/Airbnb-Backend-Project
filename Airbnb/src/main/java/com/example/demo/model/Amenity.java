@@ -2,12 +2,7 @@ package com.example.demo.model;
 
 import java.util.Set;
 
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.ManyToMany;
-import javax.persistence.Table;
+import javax.persistence.*;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -24,6 +19,6 @@ public class Amenity {
 	
 	private String name;
 
-	@ManyToMany(mappedBy = "amenities")
+	@ManyToMany(mappedBy = "amenities",cascade = CascadeType.ALL)
 	private Set<Room> rooms;
 }

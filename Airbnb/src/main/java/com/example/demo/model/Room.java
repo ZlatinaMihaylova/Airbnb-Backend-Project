@@ -69,7 +69,7 @@ public class Room {
 	
 	private Long userId;
 	
-	@ManyToMany(mappedBy = "favourites")
+	@ManyToMany(mappedBy = "favourites", cascade = CascadeType.ALL)
 	private Set<User> inFavourites;
 	
 }
