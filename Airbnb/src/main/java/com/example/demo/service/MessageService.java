@@ -22,10 +22,9 @@ public class MessageService {
 
 	@Autowired
 	private MessageRepository messageRepository;
-	
+
 	@Autowired
-	private UserRepository userRepository;
-	
+	private UserService userService;
 	
 	public Map<Long, TreeSet<Message>> getUserAllMessages(long userId){
 		Map<Long, TreeSet<Message>> userAllMessages = new HashMap<Long, TreeSet<Message>>();
@@ -42,15 +41,12 @@ public class MessageService {
 			if (otherUserId != null ) {
 				if ( userAllMessages.containsKey(otherUserId)) {
 					userAllMessages.get(otherUserId).add(message);
-				}
-				else { 
-					
+				} else {
 					userAllMessages.put(otherUserId, new TreeSet<Message>((m1,m2) -> m1.getDateTime().compareTo(m2.getDateTime())));
 					userAllMessages.get(otherUserId).add(message);
 				}
 			}
 		}
-		
 		return userAllMessages;
 	}
 	
@@ -62,7 +58,7 @@ public class MessageService {
 		
 		for (Entry<Long, TreeSet<Message>> entry: userAllMessages.entrySet()) {
 			Message message = entry.getValue().last();
-			messagesList.add(new ChatListDTO(userRepository.findById(entry.getKey()).orElseThrow(() -> new ElementNotFoundException()).viewAllNames()
+			messagesList.add(new ChatListDTO(userService.findById(userId).viewAllNames()
 					,message.getText(),message.getDateTime()));
 		}
 		return messagesList;
@@ -78,7 +74,7 @@ public class MessageService {
 		}
 		
 		for ( Message m : messages) {
-			chat.add(new ChatWithUserDTO(userRepository.findById(m.getSenderId()).orElseThrow(() -> new ElementNotFoundException()).viewAllNames(),
+			chat.add(new ChatWithUserDTO( userService.findById(userId).viewAllNames(),
 					m.getText(), m.getDateTime()));
 		}
 		return chat;
@@ -86,13 +82,14 @@ public class MessageService {
 	
 	public void sendMessage(long senderId, long receiverId, String text) throws ElementNotFoundException {
 		LocalDateTime time = LocalDateTime.now();
-		
-		if (!userRepository.findById(senderId).isPresent() || !userRepository.findById(receiverId).isPresent()){
-			throw new ElementNotFoundException("No such user!");
-		}
-		
+
+		userService.findById(senderId);
+		userService.findById(receiverId);
+
 		Message message = new Message(null,senderId,receiverId,text, time);
 		messageRepository.saveAndFlush(message);
 	}
-	
+
+
+
 }

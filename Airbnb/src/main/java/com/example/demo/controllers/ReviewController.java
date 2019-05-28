@@ -1,6 +1,7 @@
 package com.example.demo.controllers;
 
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -26,7 +27,7 @@ public class ReviewController {
 	
 	@GetMapping("/rooms/{roomId}/reviews")
 	public Set<ReviewsForRoomDTO> getAllReviewsByRoomId(@PathVariable long roomId) throws ElementNotFoundException {
-		return reviewService.getAllReviewsByRoomId(roomId);
+		return reviewService.getAllReviewsByRoomId(roomId).stream().map(review -> reviewService.convertReviewToDTO(review)).collect(Collectors.toSet());
 	}
 	
 	@PostMapping("/rooms/{roomId}/reviews")

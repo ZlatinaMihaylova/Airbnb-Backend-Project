@@ -5,20 +5,18 @@ import java.math.BigInteger;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 import com.example.demo.exceptions.ElementNotFoundException;
+import com.example.demo.model.Room;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import com.example.demo.dao.BookingRepository;
 import com.example.demo.dao.UserRepository;
 import com.example.demo.dto.EditProfileDTO;
 import com.example.demo.dto.LoginDTO;
 import com.example.demo.dto.RoomListDTO;
-import com.example.demo.dto.UserBookingsDTO;
 import com.example.demo.dto.UserProfileDTO;
 import com.example.demo.exceptions.SignUpException;
 import com.example.demo.model.User;
@@ -28,57 +26,62 @@ public class UserService {
 
 	@Autowired
 	private UserRepository userRepository;
+
+	@Autowired
+	private BookingService bookingService;
 	
 	@Autowired
 	private RoomService roomService;
 	
 	@Autowired
 	private ReviewService reviewService;
-	
-	@Autowired
-	private BookingRepository bookingRepository;
+
+
+	public void saveUser(User user) {
+		userRepository.saveAndFlush(user);
+	}
 
 	public Set<User> getAllUsers(){
 		return userRepository.findAll().stream().collect(Collectors.toSet());
 	}
+
+	public User findById(long id) throws ElementNotFoundException {
+		return userRepository.findById(id).orElseThrow(() -> new ElementNotFoundException("User not found"));
+	}
+
+	public UserProfileDTO convertUserToDTO(User user) throws ElementNotFoundException {
+		return new UserProfileDTO(user.viewAllNames(), user.getPhone(),
+				roomService.getUserRooms(user.getId()).stream().map(room -> roomService.convertRoomToDTO(room)).collect(Collectors.toList()),
+				reviewService.getAllReviewsForUser(user.getId()).stream().map(review -> reviewService.convertReviewToDTO(review)).collect(Collectors.toList()));
+	}
 	
-	public long signUp(User user) throws SignUpException, NoSuchAlgorithmException, UnsupportedEncodingException {
+	public void signUp(User user) throws SignUpException, NoSuchAlgorithmException, UnsupportedEncodingException {
 		if ( !this.isPasswordValid(user.getPassword()) || !this.isValidEmailAddress(user.getEmail())) {
 			throw new SignUpException("Invalid email or password");
 		}
-		if (userRepository.findAll().stream().anyMatch(u -> u.getEmail().equals(user.getEmail()))) {
+		if (userRepository.findByEmail(user.getEmail()).isPresent()) {
 			throw new SignUpException("Email is already used");
 		}
 		User result = new User(null, user.getFirstName(), user.getLastName(),UserService.encryptPassword(user.getPassword()) , user.getEmail(),
 				user.getBirthDate(), user.getPhone(),null);
-		userRepository.saveAndFlush(result);
-		return result.getId();
+		saveUser(result);
 	}
-	
-	public UserProfileDTO getUserById(long userId) throws ElementNotFoundException {
-		User user = userRepository.findById(userId).orElseThrow(() ->  new ElementNotFoundException("User not found"));
-		return new UserProfileDTO(user.viewAllNames(),user.getPhone(),roomService.getUserRooms(userId),roomService.getUserReviews(userId));
 
-	}
-	
 	public User login(LoginDTO loginDTO) throws ElementNotFoundException, NoSuchAlgorithmException, UnsupportedEncodingException {
 		String encryptedPassword = UserService.encryptPassword(loginDTO.getPassword());
 		return userRepository.findByEmailAndPassword(loginDTO.getEmail(), encryptedPassword).orElseThrow(() -> new ElementNotFoundException("User not found"));
 	}
 	
-	public UserProfileDTO changeInformation(long userId, EditProfileDTO editProfileDTO) throws ElementNotFoundException, NoSuchAlgorithmException, UnsupportedEncodingException {
+	public User changeInformation(long userId, EditProfileDTO editProfileDTO) throws ElementNotFoundException, NoSuchAlgorithmException, UnsupportedEncodingException {
 		User user = new User(userId, editProfileDTO.getFirstName(),editProfileDTO.getLastName(),UserService.encryptPassword(editProfileDTO.getPassword()),editProfileDTO.getEmail(),
 				editProfileDTO.getBirthDate(),editProfileDTO.getPhone(),null);
-		userRepository.save(user);
-		return this.getUserById(userId);
+		saveUser(user);
+		return user;
 	}
 
-	public List<RoomListDTO> viewFavouritesRoom(long userId) throws ElementNotFoundException {
-		User user = userRepository.findById(userId).orElseThrow(() -> new ElementNotFoundException("User not found."));
-		return user.getFavourites()
-				.stream()
-				.map(room -> new RoomListDTO(room.getDetails(), room.getCity().getName(), reviewService.getRoomRating(room.getId()), reviewService.getRoomTimesRated(room.getId())))
-				.collect(Collectors.toList());
+	public List<Room> viewFavouritesRoom(long userId) throws ElementNotFoundException {
+		User user = findById(userId);
+		return user.getFavourites();
 	}
 
 	public boolean isValidEmailAddress(String email) {
@@ -93,12 +96,6 @@ public class UserService {
 	    String pattern = "(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=\\S+$).{8,}";
 	    return password.matches(pattern);
 	  }
-
-	public Set<UserBookingsDTO> showMyBookings(long userId) {
-			return bookingRepository.findByUserId(userId).stream()
-			.map(b -> new UserBookingsDTO(b.getRoom().getId(), b.getStartDate(), b.getEndDate()))
-			.collect(Collectors.toSet());
-	}
 
 	private static String encryptPassword(String password) throws NoSuchAlgorithmException, UnsupportedEncodingException {
 		MessageDigest crypt = MessageDigest.getInstance("SHA-1");

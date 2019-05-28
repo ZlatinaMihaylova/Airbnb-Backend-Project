@@ -4,12 +4,14 @@ import java.io.UnsupportedEncodingException;
 import java.security.NoSuchAlgorithmException;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
+import com.example.demo.dto.*;
 import com.example.demo.exceptions.ElementNotFoundException;
+import com.example.demo.service.BookingService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -18,11 +20,6 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.example.demo.dto.EditProfileDTO;
-import com.example.demo.dto.LoginDTO;
-import com.example.demo.dto.RoomListDTO;
-import com.example.demo.dto.UserBookingsDTO;
-import com.example.demo.dto.UserProfileDTO;
 import com.example.demo.exceptions.BadRequestException;
 import com.example.demo.exceptions.SignUpException;
 import com.example.demo.exceptions.UnauthorizedException;
@@ -39,6 +36,9 @@ public class UserController {
 	
 	@Autowired
 	private RoomService roomService;
+
+	@Autowired
+	private BookingService bookingService;
 	
 	static long authentication(HttpServletRequest request) throws UnauthorizedException {
 		HttpSession session = request.getSession();
@@ -51,12 +51,12 @@ public class UserController {
 	}
 	
 	@PostMapping("/users")
-	public long signUp(@RequestBody User user,HttpServletRequest request) throws SignUpException, BadRequestException, NoSuchAlgorithmException, UnsupportedEncodingException{
+	public void signUp(@RequestBody User user,HttpServletRequest request) throws SignUpException, BadRequestException, NoSuchAlgorithmException, UnsupportedEncodingException{
 		HttpSession session = request.getSession();
 		if (session.getAttribute("userId") != null) {
 			throw new BadRequestException("User is already logged in");
 		}
-		return userService.signUp(user);
+		userService.signUp(user);
 		
 	}
 	
@@ -67,7 +67,7 @@ public class UserController {
 	
 	@GetMapping("/users/{userId}")
 	public UserProfileDTO getUserDetails(@PathVariable long userId) throws ElementNotFoundException {
-		return userService.getUserById(userId);
+		return userService.convertUserToDTO(userService.findById(userId));
 	}
 	
 	@PostMapping("/login")
@@ -94,26 +94,26 @@ public class UserController {
 	public UserProfileDTO changeInformation(@RequestBody EditProfileDTO editProfileDTO,HttpServletRequest request) throws UnauthorizedException, ElementNotFoundException, NoSuchAlgorithmException, UnsupportedEncodingException {
 		
 		long id = UserController.authentication(request);
-		return userService.changeInformation(id, editProfileDTO);
+		return userService.convertUserToDTO(userService.changeInformation(id, editProfileDTO));
 	}
 	@GetMapping("/profile")
 	public UserProfileDTO getUserProfile(HttpServletRequest request) throws UnauthorizedException, ElementNotFoundException {
 		
 		long id = UserController.authentication(request);
-		return userService.getUserById(id);
+		return userService.convertUserToDTO(userService.findById(id));
 	}
 	
 	@GetMapping("/viewFavourites")
 	public List<RoomListDTO> viewFavourites(HttpServletRequest request) throws UnauthorizedException, ElementNotFoundException{
 		
 		long id = UserController.authentication(request);
-		return userService.viewFavouritesRoom(id);
+		return userService.viewFavouritesRoom(id).stream().map(room -> roomService.convertRoomToDTO(room)).collect(Collectors.toList());
 	}
 	
 	@GetMapping("/myBookings")
-	public Set<UserBookingsDTO> showMyBookings(HttpServletRequest request) throws UnauthorizedException{
+	public Set<RoomBookingDTO> showMyBookings(HttpServletRequest request) throws UnauthorizedException{
 		
 		long id = UserController.authentication(request);
-		return userService.showMyBookings(id);
+		return bookingService.getAllUsersBookings(id).stream().map(booking -> BookingService.convertBookingToDTO(booking)).collect(Collectors.toSet());
 	}
 }

@@ -1,46 +1,28 @@
 package com.example.demo.service;
 
 import com.example.demo.dao.AmenityRepository;
-import com.example.demo.dao.BookingRepository;
 import com.example.demo.dao.CityRepository;
 import com.example.demo.dao.PhotoRepository;
-import com.example.demo.dao.ReviewRepository;
 import com.example.demo.dao.RoomRepository;
-import com.example.demo.dao.UserRepository;
-import com.example.demo.dto.BookingListDTO;
 import com.example.demo.dto.PhotoAddDTO;
-import com.example.demo.dto.ReviewsForRoomDTO;
 import com.example.demo.dto.RoomAddDTO;
-import com.example.demo.dto.RoomBookingDTO;
 import com.example.demo.dto.RoomInfoDTO;
 import com.example.demo.dto.RoomListDTO;
 import com.example.demo.exceptions.*;
 import com.example.demo.model.*;
 
-import java.sql.SQLException;
-import java.time.LocalDate;
 import java.util.*;
-import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.util.StringUtils;;
+;
 
 @Service
 public class RoomService {
 
 	@Autowired
 	private RoomRepository roomRepository;
-	
-	@Autowired
-	private ReviewRepository reviewRepository;
-
-	@Autowired
-	private PhotoRepository photoRepository;
-
-	@Autowired
-	private CityRepository cityRepository;
 	
 	@Autowired
 	private ReviewService reviewService;
@@ -52,35 +34,26 @@ public class RoomService {
 	private UserService userService;
 
 	@Autowired
-	private UserRepository userRepository;
+	private BookingService bookingService;
+
+
+	@Autowired
+	private PhotoRepository photoRepository;
+
+	@Autowired
+	private CityRepository cityRepository;
 
 	@Autowired
 	private AmenityRepository amenityRepository;
-	
-	@Autowired
-	private BookingRepository bookingRepository;
 
-	public List<RoomListDTO> getRoomsForHomePage() {
-		return roomRepository.findAll().stream()
-				.map(room -> new RoomListDTO(room.getDetails(), room.getCity().getName(), 
-						reviewService.getRoomRating(room.getId()), reviewService.getRoomTimesRated(room.getId())))
-				.collect(Collectors.toList());
 
+
+	public Room getRoomById(long id) throws ElementNotFoundException{
+		return roomRepository.findById(id).orElseThrow(() -> new ElementNotFoundException("Room not found"));
 	}
 
-	public RoomInfoDTO getRoomById(long roomId) throws ElementNotFoundException {
-		Room room = roomRepository.findById(roomId).orElseThrow(() -> new ElementNotFoundException("Room not found!"));
-
-		Set<String> amenities = room.getAmenities().stream().map(amenity -> amenity.getName())
-				.collect(Collectors.toSet());
-
-		Set<String> photos = photoRepository.findByRoomId(roomId).stream()
-				.map(photo -> new String(photo.getUrl())).collect(Collectors.toSet());
-
-		RoomInfoDTO result = new RoomInfoDTO(room.getAddress(), room.getGuests(), room.getBedrooms(), room.getBeds(), room.getBaths(),
-				room.getPrice(), room.getDetails(), photos, amenities);
-
-		return result;
+	public List<Room> getAllRooms() {
+		return roomRepository.findAll();
 	}
 
 	public long addRoom(RoomAddDTO room, Long userId) throws ElementNotFoundException {
@@ -112,7 +85,7 @@ public class RoomService {
 
 	public void removeRoom(long roomId, long userId) throws ElementNotFoundException, UnauthorizedException {
 		this.checkRoomOwner(roomId, userId);
-		this.removeAllBookingsFromRoom(roomId,userId);
+		bookingService.removeAllBookingsFromRoom(roomId,userId);
 		this.removeAllPhotosForRoom(roomId);
 		reviewService.removeAllReviewsForRoom(roomId);
 		Room room = roomRepository.findById(roomId).orElseThrow(() -> new ElementNotFoundException("Room not found."));
@@ -120,7 +93,7 @@ public class RoomService {
 		Set<User> inFavourites = room.getInFavourites();
 		for ( User u : inFavourites) {
 			u.getFavourites().remove(room);
-			userRepository.saveAndFlush(u);
+			userService.saveUser(u);
 		}
 
 		Set<Amenity> amenities = room.getAmenities();
@@ -132,112 +105,25 @@ public class RoomService {
 		roomRepository.delete(roomRepository.findById(roomId).orElseThrow(() -> new ElementNotFoundException("Room not found!")));
 	}
 
-	public Set<RoomListDTO> getUserRooms(long userId) throws ElementNotFoundException{
-
-		if (!userRepository.findById(userId).isPresent()) {
-			throw new ElementNotFoundException("User not found");
-		}
-		return roomRepository.findByUserId(userId).stream()
-				.map(room -> new RoomListDTO(room.getDetails(), room.getCity().getName(),
-						reviewService.getRoomRating(room.getId()), reviewService.getRoomTimesRated(room.getId())))
-				.collect(Collectors.toSet());
-/*
-		return roomRepository.findAll().stream().filter(room -> room.getUserId().equals(userId))
-				.map(room -> new RoomListDTO(room.getDetails(), room.getCity().getName(), 
-						reviewService.getRoomRating(room.getId()), reviewService.getRoomTimesRated(room.getId())))
-				.collect(Collectors.toSet());
-				*/
+	public List<Room> getUserRooms(long userId) throws ElementNotFoundException{
+		userService.findById(userId);
+		return roomRepository.findByUserId(userId);
 	}
 	
-	public Set<ReviewsForRoomDTO> getUserReviews(long userId) throws ElementNotFoundException{
-		if (!userRepository.findById(userId).isPresent()) {
-			throw new ElementNotFoundException("User not found");
-		}
-		
-		return reviewRepository.findAll().stream().filter(review -> review.getRoom().getUserId() == userId)
-				.map(review -> new ReviewsForRoomDTO(review.getUser().viewAllNames(), review.getDate(),review.getText())).collect(Collectors.toSet());
-		
-				
-	}
-	
-	public List<RoomListDTO> addRoomInFavourites(long userId, long roomId) throws ElementNotFoundException, UnauthorizedException {
-		Room room = roomRepository.findById(roomId).orElseThrow(() -> new ElementNotFoundException("Room not found."));
+	public void addRoomInFavourites(long userId, long roomId) throws ElementNotFoundException, UnauthorizedException {
+		Room room = getRoomById(roomId);
 		if ( room.getUserId() == userId) {
 			throw new UnauthorizedException("User can not put his own room in Favourites!");
 		}
-		User user = userRepository.findById(userId).orElseThrow(() -> new ElementNotFoundException("User not found."));
+		User user = userService.findById(userId);
 		room.getInFavourites().add(user);
 		roomRepository.saveAndFlush(room);
 		user.getFavourites().add(room);
-		userRepository.saveAndFlush(user);
-		return userService.viewFavouritesRoom(userId);
-
-		
+		userService.saveUser(user);
 	}
 	
-	public Set<RoomListDTO> getRoomsByCityName(String cityName) {
-		return roomRepository.findAll().stream()
-				.filter(room -> room.getCity().getName().equalsIgnoreCase(cityName))
-				.map(room -> new RoomListDTO(room.getDetails(), room.getCity().getName(), 
-						reviewService.getRoomRating(room.getId()), reviewService.getRoomTimesRated(room.getId())))
-				.collect(Collectors.toSet());
-	}
-
-	public long makeReservation(RoomBookingDTO reservation, Long userId) throws ElementNotFoundException, BookingIsOverlapingException, UnauthorizedException, BadRequestException {
-		Room room = roomRepository.findById(reservation.getRoomId()).orElseThrow(() -> new ElementNotFoundException("Room not found!"));
-		
-		if (reservation.getStartDate().isAfter(reservation.getEndDate())) {
-			LocalDate temp = reservation.getStartDate();
-			reservation.setStartDate(reservation.getEndDate());
-			reservation.setEndDate(temp);
-		}
-		if ( reservation.getStartDate().isBefore(LocalDate.now())) {
-			throw new BadRequestException("User can book only for dates after today!");
-		}
-		if ( room.getUserId().equals(userId)) {
-			throw new UnauthorizedException("User can not book hiw own room!");
-		}
-		Booking result = new Booking(null, reservation.getStartDate(), reservation.getEndDate(),
-				userRepository.findById(userId).orElseThrow( () -> new ElementNotFoundException("User not found.")), room);
-
-		boolean isOverlapping = bookingRepository.findByRoomId(reservation.getRoomId()).stream()
-				.anyMatch(booking -> booking.overlap(result));
-		
-		if(isOverlapping) {
-			throw new BookingIsOverlapingException("Overlaping dates");
-		}
-		
-		bookingRepository.saveAndFlush(result);
-		return result.getId();
-		
-	}
-	
-	private void removeAllBookingsFromRoom(long roomId,long userId) throws ElementNotFoundException {
-		Set<Booking> roomBookings = bookingRepository.findAll().stream()
-		.filter(b -> b.getRoom().getId().equals(roomId))
-		.collect(Collectors.toSet());
-		
-		for ( Booking booking : roomBookings) {
-			if ( booking.getStartDate().isAfter(LocalDate.now())) {
-				messageService.sendMessage(userId, booking.getUser().getId(),
-						"Your booking for " + booking.getRoom().getDetails() + " has been canceled. The room has been deleted");
-			}
-			
-		}
-		
-		bookingRepository.deleteAll(roomBookings);
-	}
-	
-	public void removeBookingById(long bookingId, long userId, long roomId) throws  ElementNotFoundException, UnauthorizedException{
-		this.checkRoomOwner(roomId, userId);
-		bookingRepository.delete(bookingRepository.findById(bookingId).orElseThrow(() -> new ElementNotFoundException("Booking not found!")));
-	}
-	
-	public Set<BookingListDTO> showAllBookingsForRoom(long roomId) throws ElementNotFoundException{
-		Room room = roomRepository.findById(roomId).orElseThrow(() -> new ElementNotFoundException("Room not found"));
-		return bookingRepository.findByRoomId(roomId).stream()
-		.map(b -> new BookingListDTO(b.getStartDate(), b.getEndDate()))
-		.collect(Collectors.toSet());
+	public List<Room> getRoomsByCityName(String cityName) {
+		return roomRepository.findByCityName(cityName);
 	}
 	
 	public long addPhoto(long roomId, long userId , PhotoAddDTO p) throws ElementNotFoundException, UnauthorizedException {
@@ -254,7 +140,7 @@ public class RoomService {
 		photoRepository.delete(photoRepository.findById(photoId).orElseThrow(() -> new ElementNotFoundException("Photo not found!")));
 	}
 	
-	public void removeAllPhotosForRoom(long roomId) {
+	private void removeAllPhotosForRoom(long roomId) {
 		Set<Photo> photos = photoRepository.findAll().stream()
 				.filter(p -> p.getRoom().getId() == roomId)
 				.collect(Collectors.toSet());
@@ -262,11 +148,29 @@ public class RoomService {
 		photoRepository.deleteAll(photos);
 	}
 	
-	private void checkRoomOwner(long roomId, long userId) throws ElementNotFoundException,UnauthorizedException {
+	public void checkRoomOwner(long roomId, long userId) throws ElementNotFoundException,UnauthorizedException {
 		Room room = roomRepository.findById(roomId).orElseThrow(() -> new ElementNotFoundException("Room not found!"));
 
 		if ( room.getUserId() != userId) {
 			throw new UnauthorizedException("User is not authorised");
 		}
 	}
+
+	public RoomListDTO convertRoomToDTO(Room room) {
+		return new RoomListDTO(room.getDetails(), room.getCity().getName(), reviewService.getRoomRating(room), reviewService.getRoomTimesRated(room));
+	}
+
+
+	public RoomInfoDTO convertRoomToRoomInfoDTO(Room room) {
+		Set<String> amenities = room.getAmenities().stream().map(amenity -> amenity.getName())
+				.collect(Collectors.toSet());
+
+		Set<String> photos = photoRepository.findByRoomId(room.getId()).stream()
+				.map(photo -> new String(photo.getUrl())).collect(Collectors.toSet());
+
+		return new RoomInfoDTO(room.getAddress(), room.getGuests(), room.getBedrooms(), room.getBeds(), room.getBaths(),
+				room.getPrice(), room.getDetails(), photos, amenities);
+
+	}
+
 }

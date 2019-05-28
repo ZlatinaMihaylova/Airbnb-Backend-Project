@@ -21,8 +21,7 @@ import com.example.demo.service.MessageService;
 
 @RestController
 public class MessageController {
-	
-	
+
 	@Autowired
 	private MessageService messageService;
 	
@@ -31,7 +30,6 @@ public class MessageController {
 	public Set<ChatListDTO> getAllMessages(HttpServletRequest request) throws UnauthorizedException, ElementNotFoundException {
 		long id = UserController.authentication(request);
 		return messageService.getAllMessagesForMessagePage(id);
-		
 	}
 	
 	@GetMapping("/messages/{userId}")

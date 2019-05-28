@@ -2,6 +2,7 @@ package com.example.demo.model;
 
 import java.sql.Date;
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Set;
 
 import javax.persistence.CascadeType;
@@ -57,7 +58,7 @@ public class User {
 	@JoinTable(name ="favourites",
 	joinColumns = @JoinColumn(name = "user_id"),
 	inverseJoinColumns = @JoinColumn(name = "room_id"))
-	private Set<Room> favourites;
+	private List<Room> favourites;
 	
 	@Override
 	public boolean equals(Object obj) {
