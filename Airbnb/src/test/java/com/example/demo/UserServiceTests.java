@@ -83,7 +83,7 @@ public class UserServiceTests {
     public void testSignUpOK() throws SignUpException, NoSuchAlgorithmException, UnsupportedEncodingException  {
          userService.signUp(user);
     }
-
+/*
     @Test(expected = ElementNotFoundException.class)
     public void getUserByIdNotFound() throws ElementNotFoundException  {
         Mockito.when(userRepository.findById(user.getId())).thenReturn(Optional.empty());
@@ -116,5 +116,7 @@ public class UserServiceTests {
     }
 
 
+
+ */
 
 }

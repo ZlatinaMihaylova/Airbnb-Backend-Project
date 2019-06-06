@@ -4,18 +4,19 @@ import com.example.demo.dao.AmenityRepository;
 import com.example.demo.dao.CityRepository;
 import com.example.demo.dao.PhotoRepository;
 import com.example.demo.dao.RoomRepository;
-import com.example.demo.dto.PhotoAddDTO;
-import com.example.demo.dto.RoomAddDTO;
-import com.example.demo.dto.RoomInfoDTO;
-import com.example.demo.dto.RoomListDTO;
+import com.example.demo.dto.*;
 import com.example.demo.exceptions.*;
 import com.example.demo.model.*;
 
+import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 ;
 
 @Service
@@ -45,8 +46,6 @@ public class RoomService {
 
 	@Autowired
 	private AmenityRepository amenityRepository;
-
-
 
 	public Room getRoomById(long id) throws ElementNotFoundException{
 		return roomRepository.findById(id).orElseThrow(() -> new ElementNotFoundException("Room not found"));
@@ -90,10 +89,10 @@ public class RoomService {
 		reviewService.removeAllReviewsForRoom(roomId);
 		Room room = roomRepository.findById(roomId).orElseThrow(() -> new ElementNotFoundException("Room not found."));
 
-		Set<User> inFavourites = room.getInFavourites();
+		List<User> inFavourites = room.getInFavourites();
 		for ( User u : inFavourites) {
 			u.getFavourites().remove(room);
-			userService.saveUser(u);
+			userService.saveUserToDB(u);
 		}
 
 		Set<Amenity> amenities = room.getAmenities();
@@ -106,7 +105,6 @@ public class RoomService {
 	}
 
 	public List<Room> getUserRooms(long userId) throws ElementNotFoundException{
-		userService.findById(userId);
 		return roomRepository.findByUserId(userId);
 	}
 	
@@ -119,11 +117,21 @@ public class RoomService {
 		room.getInFavourites().add(user);
 		roomRepository.saveAndFlush(room);
 		user.getFavourites().add(room);
-		userService.saveUser(user);
+		userService.saveUserToDB(user);
 	}
 	
 	public List<Room> getRoomsByCityName(String cityName) {
 		return roomRepository.findByCityName(cityName);
+	}
+
+	public List<Room> getRoomsBySearchDTO(SearchRoomDTO searchRoomDTO) throws ElementNotFoundException{
+		List<Room> rooms = roomRepository
+				.findByCityName(searchRoomDTO.getCity())
+				.stream()
+				.filter(room -> isRoomFree(room, searchRoomDTO.getStartDate(), searchRoomDTO.getEndDate()))
+				.filter(room -> room.getGuests() >= searchRoomDTO.getGuests())
+				.collect(Collectors.toList());
+		return rooms;
 	}
 	
 	public long addPhoto(long roomId, long userId , PhotoAddDTO p) throws ElementNotFoundException, UnauthorizedException {
@@ -147,6 +155,11 @@ public class RoomService {
 		
 		photoRepository.deleteAll(photos);
 	}
+
+	public List<User> viewInFavouritesUser(long roomId) throws ElementNotFoundException {
+		Room room = getRoomById(roomId);
+		return room.getInFavourites();
+	}
 	
 	public void checkRoomOwner(long roomId, long userId) throws ElementNotFoundException,UnauthorizedException {
 		Room room = roomRepository.findById(roomId).orElseThrow(() -> new ElementNotFoundException("Room not found!"));
@@ -155,6 +168,11 @@ public class RoomService {
 			throw new UnauthorizedException("User is not authorised");
 		}
 	}
+
+	public boolean isRoomFree(Room room, LocalDate startDate, LocalDate endDate) {
+		return bookingService.getAllBookingsForRoom(room.getId()).stream().noneMatch(booking -> booking.overlap(startDate, endDate));
+	}
+
 
 	public RoomListDTO convertRoomToDTO(Room room) {
 		return new RoomListDTO(room.getDetails(), room.getCity().getName(), reviewService.getRoomRating(room), reviewService.getRoomTimesRated(room));
@@ -171,6 +189,12 @@ public class RoomService {
 		return new RoomInfoDTO(room.getAddress(), room.getGuests(), room.getBedrooms(), room.getBeds(), room.getBaths(),
 				room.getPrice(), room.getDetails(), photos, amenities);
 
+	}
+
+	public List<LocalDate> getRoomAvailability(long roomId) throws  ElementNotFoundException {
+		LocalDate now = LocalDate.now();
+		Room room = getRoomById(roomId);
+		return Stream.iterate(now, date -> date.plusDays(1)).limit(365).filter(day -> isRoomFree(room, day, day)).collect(Collectors.toList());
 	}
 
 }

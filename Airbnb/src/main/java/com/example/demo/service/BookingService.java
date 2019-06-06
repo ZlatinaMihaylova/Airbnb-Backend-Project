@@ -46,21 +46,17 @@ public class BookingService {
         checkForOverlappingDates(result);
         bookingRepository.saveAndFlush(result);
         return result.getId();
-
     }
 
     public void removeAllBookingsFromRoom(long roomId,long userId) throws ElementNotFoundException {
-        Set<Booking> roomBookings = bookingRepository.findAll().stream()
-                .filter(b -> b.getRoom().getId().equals(roomId))
-                .collect(Collectors.toSet());
-
-        for ( Booking booking : roomBookings) {
+        List<Booking> bookings = bookingRepository.findByRoomId(roomId);
+        for ( Booking booking : bookings) {
             if ( booking.getStartDate().isAfter(LocalDate.now())) {
                 messageService.sendMessage(userId, booking.getUser().getId(),
                         "Your booking for " + booking.getRoom().getDetails() + " has been canceled. The room has been deleted");
             }
         }
-        bookingRepository.deleteAll(roomBookings);
+        bookingRepository.deleteAll(bookings);
     }
 
     public void removeBookingById(long bookingId, long userId, long roomId) throws  ElementNotFoundException, UnauthorizedException{
@@ -68,8 +64,7 @@ public class BookingService {
         bookingRepository.delete(bookingRepository.findById(bookingId).orElseThrow(() -> new ElementNotFoundException("Booking not found!")));
     }
 
-    public List<Booking> getAllBookingsForRoom(long roomId) throws ElementNotFoundException{
-        Room room = roomService.getRoomById(roomId);
+    public List<Booking> getAllBookingsForRoom(long roomId) {
         return bookingRepository.findByRoomId(roomId);
     }
 
@@ -90,7 +85,7 @@ public class BookingService {
 
     private void checkForOverlappingDates(Booking reservation) throws BookingIsOverlapingException {
         boolean isOverlapping = bookingRepository.findByRoomId(reservation.getRoom().getId()).stream()
-                .anyMatch(booking -> booking.overlap(reservation));
+                .anyMatch(booking -> booking.overlap(reservation.getStartDate(),reservation.getEndDate()));
 
         if(isOverlapping) {
             throw new BookingIsOverlapingException("Overlapping dates");

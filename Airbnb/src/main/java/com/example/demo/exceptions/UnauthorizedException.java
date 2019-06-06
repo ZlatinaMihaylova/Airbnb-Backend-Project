@@ -36,4 +36,8 @@ public class UnauthorizedException extends Exception{
 		// TODO Auto-generated constructor stub
 	}
 
+	@Override
+	public Throwable fillInStackTrace() {
+		return null;
+	}
 }

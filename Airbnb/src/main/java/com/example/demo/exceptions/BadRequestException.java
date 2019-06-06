@@ -36,4 +36,9 @@ public class BadRequestException extends Exception{
 	 */
 	private static final long serialVersionUID = 8371547576918650856L;
 
+	@Override
+	public Throwable fillInStackTrace() {
+		return null;
+	}
+
 }

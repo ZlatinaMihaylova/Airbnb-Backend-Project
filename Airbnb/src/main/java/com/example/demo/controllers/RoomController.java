@@ -1,15 +1,12 @@
 package com.example.demo.controllers;
 
-import com.example.demo.dto.RoomAddDTO;
-import com.example.demo.dto.RoomBookingDTO;
-import com.example.demo.dto.RoomInfoDTO;
-import com.example.demo.dto.PhotoAddDTO;
-import com.example.demo.dto.RoomListDTO;
+import com.example.demo.dto.*;
 import com.example.demo.exceptions.BadRequestException;
 import com.example.demo.exceptions.BookingIsOverlapingException;
 import com.example.demo.exceptions.ElementNotFoundException;
 import com.example.demo.exceptions.UnauthorizedException;
 
+import com.example.demo.model.User;
 import com.example.demo.service.BookingService;
 import com.example.demo.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,6 +16,8 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.time.LocalDate;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -39,50 +38,49 @@ public class RoomController {
 
 	@Autowired
 	private BookingService bookingService;
+
+	@GetMapping("/rooms/roomId={roomId}")
+	public RoomInfoDTO getRoomById(@PathVariable long roomId) throws ElementNotFoundException {
+		return roomService.convertRoomToRoomInfoDTO(roomService.getRoomById(roomId));
+	}
+
+	@GetMapping("/rooms")
+	public List<RoomListDTO> getAllRooms(HttpServletResponse response) throws ElementNotFoundException{
+		return roomService.getAllRooms().stream().map(room -> roomService.convertRoomToDTO(room)).collect(Collectors.toList());
+	}
+
+	@PostMapping("/rooms/create")
+	public long addRoom(@RequestBody RoomAddDTO newRoom,HttpServletRequest request) throws ElementNotFoundException, UnauthorizedException {
+		long id = UserController.authentication(request);
+		return roomService.addRoom(newRoom,id);
+	}
+
+	@PostMapping("/rooms/delete/{roomId}")
+	public void removeRoom(@PathVariable long roomId,HttpServletRequest request) throws UnauthorizedException, ElementNotFoundException {
+		long id = UserController.authentication(request);
+		roomService.removeRoom(roomId,id);
+	}
+
+	@GetMapping("{userId}/rooms")
+	public List<RoomListDTO> getUserRooms(@PathVariable long userId,HttpServletRequest request) throws UnauthorizedException, ElementNotFoundException {
+		return roomService.getUserRooms(userId).stream().map(room -> roomService.convertRoomToDTO(room)).collect(Collectors.toList());
+	}
 	
 	@GetMapping("/rooms/{roomId}/addInFavourites")
 	public List<RoomListDTO> addRoomInFavourites(@PathVariable long roomId,HttpServletRequest request,HttpServletResponse response) throws ElementNotFoundException, UnauthorizedException {
 		long id = UserController.authentication(request);
 		roomService.addRoomInFavourites(id, roomId);
-		return userService.viewFavouritesRoom(id).stream().map(room -> roomService.convertRoomToDTO(room)).collect(Collectors.toList());
+		return userService.viewFavouriteRooms(id).stream().map(room -> roomService.convertRoomToDTO(room)).collect(Collectors.toList());
 	}
-	
-	@GetMapping("/rooms")
-	public List<RoomListDTO> getAllRooms(HttpServletResponse response) throws ElementNotFoundException{
-		return roomService.getAllRooms().stream().map(room -> roomService.convertRoomToDTO(room)).collect(Collectors.toList());
-	}
-	
-	@GetMapping("/rooms/roomId={roomId}")
-	public RoomInfoDTO getRoomById(@PathVariable long roomId) throws ElementNotFoundException {
-			return roomService.convertRoomToRoomInfoDTO(roomService.getRoomById(roomId));
-	}
-	
-	@PostMapping("/rooms/create")
-	public long createRoom(@RequestBody RoomAddDTO newRoom,HttpServletRequest request) throws ElementNotFoundException, UnauthorizedException {
-		long id = UserController.authentication(request);
-		return roomService.addRoom(newRoom,id);
-	}
-	
-	@PostMapping("/rooms/delete/{roomId}")
-	public void deleteRoom(@PathVariable long roomId,HttpServletRequest request) throws UnauthorizedException, ElementNotFoundException {
-		long id = UserController.authentication(request);
-		roomService.removeRoom(roomId,id);
-	}
-	
+
 	@GetMapping("/rooms/cityName={cityName}")
 	public List<RoomListDTO> getRoomsByCityName(@PathVariable String cityName) throws ElementNotFoundException {
 		return roomService.getRoomsByCityName(cityName).stream().map(room -> roomService.convertRoomToDTO(room)).collect(Collectors.toList());
 	}
-	
-	@PostMapping("/rooms/booking")
-	public long makeReservation(@RequestBody RoomBookingDTO reservation,HttpServletRequest request) throws ElementNotFoundException,UnauthorizedException, BookingIsOverlapingException, BadRequestException {
-		long id = UserController.authentication(request);
-		return bookingService.makeReservation(reservation, id);
-	}
-	
-	@GetMapping("/rooms/bookings={roomId}")
-	public Set<RoomBookingDTO> getAllBookingsForRoom(@PathVariable long roomId) throws ElementNotFoundException{
-		return bookingService.getAllBookingsForRoom(roomId).stream().map(booking -> BookingService.convertBookingToDTO(booking)).collect(Collectors.toSet());
+
+	@GetMapping("/rooms/search")
+	public List<RoomListDTO> getRoomsBySearchDTO(@RequestBody SearchRoomDTO searchRoomDTO) throws ElementNotFoundException {
+		return roomService.getRoomsBySearchDTO(searchRoomDTO).stream().map(room -> roomService.convertRoomToDTO(room)).collect(Collectors.toList());
 	}
 	
 	@PostMapping("/rooms/{roomId}/addPhoto")
@@ -96,5 +94,20 @@ public class RoomController {
 		long id = UserController.authentication(request);
 		roomService.removePhoto(roomId, id, photoId);
 	}
-	
+
+	@GetMapping("/rooms/{roomId}/getInFavourites")
+	public List<UserProfileDTO> getInFavourites(@PathVariable long roomId) throws UnauthorizedException, ElementNotFoundException{
+
+		List<UserProfileDTO> userDTO = new LinkedList<>();
+		for ( User user : roomService.viewInFavouritesUser(roomId)) {
+			userDTO.add(userService.convertUserToDTO(user));
+		}
+		return userDTO;
+	}
+
+	@GetMapping("/rooms/{roomId}/availability")
+	public List<LocalDate> getRoomAvailability(@PathVariable long roomId)throws ElementNotFoundException {
+		return roomService.getRoomAvailability(roomId);
+	}
+
 }

@@ -1,5 +1,6 @@
 package com.example.demo.model;
 
+import java.util.List;
 import java.util.Set;
 
 import javax.persistence.CascadeType;
@@ -55,13 +56,6 @@ public class Room {
 	joinColumns = @JoinColumn(name = "room_id"),
 	inverseJoinColumns = @JoinColumn(name = "amenity_id"))
 	private Set<Amenity> amenities;
-/*	
-	@OneToMany(mappedBy = "room")
-	private Set<Booking> bookings;
-	
-	@OneToMany(mappedBy = "room")
-	private Set<Photo> photos;
-*/
 	
 	@NonNull
 	@ManyToOne
@@ -70,6 +64,6 @@ public class Room {
 	private Long userId;
 	
 	@ManyToMany(mappedBy = "favourites", cascade = CascadeType.ALL)
-	private Set<User> inFavourites;
+	private List<User> inFavourites;
 	
 }

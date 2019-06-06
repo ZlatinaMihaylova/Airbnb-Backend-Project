@@ -34,7 +34,6 @@ public class MessageController {
 	
 	@GetMapping("/messages/{userId}")
 	public Set<ChatWithUserDTO> getMessagesWithUserById(@PathVariable long userId,HttpServletRequest request) throws UnauthorizedException, ElementNotFoundException{
-		
 		long id = UserController.authentication(request);
 		if ( id == userId) {
 			throw new UnauthorizedException("User can not have messages with himself!");
@@ -44,7 +43,6 @@ public class MessageController {
 	
 	@PostMapping("/messages/{receiverId}")
 	public Set<ChatWithUserDTO> sendMessage(@PathVariable long receiverId,@RequestBody String text,HttpServletRequest request) throws UnauthorizedException, ElementNotFoundException {
-		
 		long id = UserController.authentication(request);
 		if ( id == receiverId) {
 			throw new UnauthorizedException("User can not send message to himself!");

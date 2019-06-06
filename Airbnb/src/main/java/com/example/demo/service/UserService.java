@@ -37,7 +37,7 @@ public class UserService {
 	private ReviewService reviewService;
 
 
-	public void saveUser(User user) {
+	public void saveUserToDB(User user) {
 		userRepository.saveAndFlush(user);
 	}
 
@@ -64,7 +64,7 @@ public class UserService {
 		}
 		User result = new User(null, user.getFirstName(), user.getLastName(),UserService.encryptPassword(user.getPassword()) , user.getEmail(),
 				user.getBirthDate(), user.getPhone(),null);
-		saveUser(result);
+		saveUserToDB(result);
 	}
 
 	public User login(LoginDTO loginDTO) throws ElementNotFoundException, NoSuchAlgorithmException, UnsupportedEncodingException {
@@ -75,11 +75,11 @@ public class UserService {
 	public User changeInformation(long userId, EditProfileDTO editProfileDTO) throws ElementNotFoundException, NoSuchAlgorithmException, UnsupportedEncodingException {
 		User user = new User(userId, editProfileDTO.getFirstName(),editProfileDTO.getLastName(),UserService.encryptPassword(editProfileDTO.getPassword()),editProfileDTO.getEmail(),
 				editProfileDTO.getBirthDate(),editProfileDTO.getPhone(),null);
-		saveUser(user);
+		saveUserToDB(user);
 		return user;
 	}
 
-	public List<Room> viewFavouritesRoom(long userId) throws ElementNotFoundException {
+	public List<Room> viewFavouriteRooms(long userId) throws ElementNotFoundException {
 		User user = findById(userId);
 		return user.getFavourites();
 	}

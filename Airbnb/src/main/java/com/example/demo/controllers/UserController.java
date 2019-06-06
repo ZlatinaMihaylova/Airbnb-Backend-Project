@@ -40,15 +40,7 @@ public class UserController {
 	@Autowired
 	private BookingService bookingService;
 	
-	static long authentication(HttpServletRequest request) throws UnauthorizedException {
-		HttpSession session = request.getSession();
-		if (session.getAttribute("userId") == null) {
-			throw new UnauthorizedException("You must login first");
-		}
-		
-		long id = (long) session.getAttribute("userId"); 
-		return id;
-	}
+
 	
 	@PostMapping("/users")
 	public void signUp(@RequestBody User user,HttpServletRequest request) throws SignUpException, BadRequestException, NoSuchAlgorithmException, UnsupportedEncodingException{
@@ -59,17 +51,7 @@ public class UserController {
 		userService.signUp(user);
 		
 	}
-	
-	@GetMapping("/users")
-	public Set<User> getAllUsers(){
-		return userService.getAllUsers();
-	}
-	
-	@GetMapping("/users/{userId}")
-	public UserProfileDTO getUserDetails(@PathVariable long userId) throws ElementNotFoundException {
-		return userService.convertUserToDTO(userService.findById(userId));
-	}
-	
+
 	@PostMapping("/login")
 	public void login(@RequestBody LoginDTO user, HttpServletRequest request) throws ElementNotFoundException, BadRequestException, NoSuchAlgorithmException, UnsupportedEncodingException {
 		HttpSession session = request.getSession();
@@ -80,7 +62,7 @@ public class UserController {
 		session = request.getSession();
 		session.setAttribute("userId", u.getId());
 	}
-	
+
 	@PostMapping("/logout")
 	public void logout(HttpServletRequest request) throws BadRequestException {
 		HttpSession session = request.getSession();
@@ -89,25 +71,31 @@ public class UserController {
 		}
 		session.invalidate();
 	}
-	
+
+	@GetMapping("/users/{userId}")
+	public UserProfileDTO getUserDetails(@PathVariable long userId) throws ElementNotFoundException {
+		return userService.convertUserToDTO(userService.findById(userId));
+	}
+
+	@GetMapping("/profile")
+	public UserProfileDTO getLoggedUserProfile(HttpServletRequest request) throws UnauthorizedException, ElementNotFoundException {
+		long id = UserController.authentication(request);
+		return userService.convertUserToDTO(userService.findById(id));
+	}
+
 	@PutMapping("/changeInformation")
 	public UserProfileDTO changeInformation(@RequestBody EditProfileDTO editProfileDTO,HttpServletRequest request) throws UnauthorizedException, ElementNotFoundException, NoSuchAlgorithmException, UnsupportedEncodingException {
 		
 		long id = UserController.authentication(request);
 		return userService.convertUserToDTO(userService.changeInformation(id, editProfileDTO));
 	}
-	@GetMapping("/profile")
-	public UserProfileDTO getUserProfile(HttpServletRequest request) throws UnauthorizedException, ElementNotFoundException {
-		
-		long id = UserController.authentication(request);
-		return userService.convertUserToDTO(userService.findById(id));
-	}
+
 	
 	@GetMapping("/viewFavourites")
-	public List<RoomListDTO> viewFavourites(HttpServletRequest request) throws UnauthorizedException, ElementNotFoundException{
+	public List<RoomListDTO> viewFavouriteRooms(HttpServletRequest request) throws UnauthorizedException, ElementNotFoundException{
 		
 		long id = UserController.authentication(request);
-		return userService.viewFavouritesRoom(id).stream().map(room -> roomService.convertRoomToDTO(room)).collect(Collectors.toList());
+		return userService.viewFavouriteRooms(id).stream().map(room -> roomService.convertRoomToDTO(room)).collect(Collectors.toList());
 	}
 	
 	@GetMapping("/myBookings")
@@ -115,5 +103,15 @@ public class UserController {
 		
 		long id = UserController.authentication(request);
 		return bookingService.getAllUsersBookings(id).stream().map(booking -> BookingService.convertBookingToDTO(booking)).collect(Collectors.toSet());
+	}
+
+	static long authentication(HttpServletRequest request) throws UnauthorizedException {
+		HttpSession session = request.getSession();
+		if (session.getAttribute("userId") == null) {
+			throw new UnauthorizedException("You must login first");
+		}
+
+		long id = (long) session.getAttribute("userId");
+		return id;
 	}
 }
