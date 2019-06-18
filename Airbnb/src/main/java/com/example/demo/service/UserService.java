@@ -8,7 +8,9 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import com.example.demo.exceptions.BadRequestException;
 import com.example.demo.exceptions.ElementNotFoundException;
+import com.example.demo.exceptions.UnauthorizedException;
 import com.example.demo.model.Room;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -20,6 +22,9 @@ import com.example.demo.dto.RoomListDTO;
 import com.example.demo.dto.UserProfileDTO;
 import com.example.demo.exceptions.SignUpException;
 import com.example.demo.model.User;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
 
 @Service
 public class UserService {
@@ -45,7 +50,7 @@ public class UserService {
 		return userRepository.findAll().stream().collect(Collectors.toSet());
 	}
 
-	public User findById(long id) throws ElementNotFoundException {
+	public User getUserById(long id) throws ElementNotFoundException {
 		return userRepository.findById(id).orElseThrow(() -> new ElementNotFoundException("User not found"));
 	}
 
@@ -72,7 +77,14 @@ public class UserService {
 		return userRepository.findByEmailAndPassword(loginDTO.getEmail(), encryptedPassword).orElseThrow(() -> new ElementNotFoundException("User not found"));
 	}
 	
-	public User changeInformation(long userId, EditProfileDTO editProfileDTO) throws ElementNotFoundException, NoSuchAlgorithmException, UnsupportedEncodingException {
+	public User changeInformation(long userId, EditProfileDTO editProfileDTO) throws NoSuchAlgorithmException, UnsupportedEncodingException, BadRequestException {
+		if ( !this.isPasswordValid(editProfileDTO.getPassword()) || !this.isValidEmailAddress(editProfileDTO.getEmail())) {
+			throw new BadRequestException("Invalid email or password");
+		}
+		if (userRepository.findByEmail(editProfileDTO.getEmail()).isPresent()) {
+			throw new BadRequestException("Email is already used");
+		}
+
 		User user = new User(userId, editProfileDTO.getFirstName(),editProfileDTO.getLastName(),UserService.encryptPassword(editProfileDTO.getPassword()),editProfileDTO.getEmail(),
 				editProfileDTO.getBirthDate(),editProfileDTO.getPhone(),null);
 		saveUserToDB(user);
@@ -80,11 +92,11 @@ public class UserService {
 	}
 
 	public List<Room> viewFavouriteRooms(long userId) throws ElementNotFoundException {
-		User user = findById(userId);
+		User user = getUserById(userId);
 		return user.getFavourites();
 	}
 
-	public boolean isValidEmailAddress(String email) {
+	private boolean isValidEmailAddress(String email) {
         String ePattern = "^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@((\\[[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\])|(([a-zA-Z\\-0-9]+\\.)+[a-zA-Z]{2,}))$";
         java.util.regex.Pattern p = java.util.regex.Pattern.compile(ePattern);
         java.util.regex.Matcher m = p.matcher(email);
@@ -92,7 +104,7 @@ public class UserService {
 	}
 	
 	// digit, lowercase, uppercase, at least 8 characters
-	public boolean isPasswordValid(String password) {
+	private boolean isPasswordValid(String password) {
 	    String pattern = "(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=\\S+$).{8,}";
 	    return password.matches(pattern);
 	  }
@@ -102,5 +114,15 @@ public class UserService {
 		crypt.reset();
 		crypt.update(password.getBytes("UTF-8"));
 		return new BigInteger(1, crypt.digest()).toString(16);
+	}
+
+	public static long authentication(HttpServletRequest request) throws UnauthorizedException {
+		HttpSession session = request.getSession();
+		if (session.getAttribute("userId") == null) {
+			throw new UnauthorizedException("You must login first");
+		}
+
+		long id = (long) session.getAttribute("userId");
+		return id;
 	}
 }

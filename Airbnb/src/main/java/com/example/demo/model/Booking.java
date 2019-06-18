@@ -41,7 +41,7 @@ public class Booking {
 	
 	
 	public boolean overlap(LocalDate startDate, LocalDate endDate) {
-		return !(this.getStartDate().isAfter(endDate) || this.getEndDate().isBefore(startDate));
+		return !(this.getStartDate().isAfter(endDate) || this.getEndDate().isEqual(startDate) || this.getEndDate().isBefore(startDate));
 		/*
 		if (b != null) {
 			return (this.getStartDate().isAfter(b.getStartDate()) && this.getStartDate().isBefore(b.getEndDate()))

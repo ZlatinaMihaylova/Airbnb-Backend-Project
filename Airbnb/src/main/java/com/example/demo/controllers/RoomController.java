@@ -50,14 +50,14 @@ public class RoomController {
 	}
 
 	@PostMapping("/rooms/create")
-	public long addRoom(@RequestBody RoomAddDTO newRoom,HttpServletRequest request) throws ElementNotFoundException, UnauthorizedException {
-		long id = UserController.authentication(request);
-		return roomService.addRoom(newRoom,id);
+	public RoomInfoDTO addRoom(@RequestBody RoomAddDTO newRoom,HttpServletRequest request) throws ElementNotFoundException, UnauthorizedException {
+		long id = UserService.authentication(request);
+		return roomService.convertRoomToRoomInfoDTO(roomService.addRoom(newRoom,id));
 	}
 
 	@PostMapping("/rooms/delete/{roomId}")
 	public void removeRoom(@PathVariable long roomId,HttpServletRequest request) throws UnauthorizedException, ElementNotFoundException {
-		long id = UserController.authentication(request);
+		long id = UserService.authentication(request);
 		roomService.removeRoom(roomId,id);
 	}
 
@@ -68,7 +68,7 @@ public class RoomController {
 	
 	@GetMapping("/rooms/{roomId}/addInFavourites")
 	public List<RoomListDTO> addRoomInFavourites(@PathVariable long roomId,HttpServletRequest request,HttpServletResponse response) throws ElementNotFoundException, UnauthorizedException {
-		long id = UserController.authentication(request);
+		long id = UserService.authentication(request);
 		roomService.addRoomInFavourites(id, roomId);
 		return userService.viewFavouriteRooms(id).stream().map(room -> roomService.convertRoomToDTO(room)).collect(Collectors.toList());
 	}
@@ -85,13 +85,13 @@ public class RoomController {
 	
 	@PostMapping("/rooms/{roomId}/addPhoto")
 	public long addPhoto(@RequestBody PhotoAddDTO photo, @PathVariable long roomId ,HttpServletRequest request) throws UnauthorizedException, ElementNotFoundException {
-		long id = UserController.authentication(request);
+		long id = UserService.authentication(request);
 		return roomService.addPhoto(roomId, id, photo);
 	}
 	
 	@PostMapping("/rooms/{roomId}/removePhoto/{photoId}")
 	public void removePhoto(@PathVariable long roomId ,@PathVariable long photoId ,HttpServletRequest request) throws UnauthorizedException, ElementNotFoundException {
-		long id = UserController.authentication(request);
+		long id = UserService.authentication(request);
 		roomService.removePhoto(roomId, id, photoId);
 	}
 

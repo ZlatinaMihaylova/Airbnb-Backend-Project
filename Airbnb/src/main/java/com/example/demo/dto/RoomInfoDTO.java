@@ -1,5 +1,6 @@
 package com.example.demo.dto;
 
+import java.util.List;
 import java.util.Set;
 
 import com.example.demo.model.Amenity;
@@ -13,6 +14,8 @@ import lombok.Setter;
 @Setter
 @AllArgsConstructor
 public class RoomInfoDTO {
+	private String mainPhoto;
+	private String name;
 	private String address;
 	private int guests;
 	private int bedrooms;
@@ -20,6 +23,6 @@ public class RoomInfoDTO {
 	private int baths;
 	private int price;
 	private String details;
-	private Set<String> photos;
-	private Set<String> amenities;
+	private List<String> photos;
+	private List<String> amenities;
 }

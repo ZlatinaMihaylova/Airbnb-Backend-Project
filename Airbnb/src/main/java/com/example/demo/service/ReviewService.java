@@ -39,12 +39,11 @@ public class ReviewService {
 	
 	public void addReviewForRoom(long userId,long roomId, WriteReviewDTO reviewDTO) throws ElementNotFoundException, UnauthorizedException {
 		LocalDateTime time = LocalDateTime.now();
-
 		if ( roomService.getRoomById(roomId).getUserId() == userId) {
 			throw new UnauthorizedException("User can not add review for his own room!");		
 		}
 		reviewRepository.saveAndFlush(new Review(null,time,reviewDTO.getText(),
-				userService.findById(userId),
+				userService.getUserById(userId),
 				roomService.getRoomById(roomId), reviewDTO.getStars()));
 	}
 	
@@ -59,14 +58,12 @@ public class ReviewService {
 
 	public void removeAllReviewsForRoom(long roomId) {
 		Set<Review> reviewsForRoom = reviewRepository.findByRoomId(roomId).stream()
-		.collect(Collectors.toSet());
-		
+			.collect(Collectors.toSet());
 		reviewRepository.deleteAll(reviewsForRoom);
 	}
 
 	public List<Review> getAllReviewsForUser(long userId) throws ElementNotFoundException{
-		userService.findById(userId);
-
+		userService.getUserById(userId);
 		return reviewRepository.findAll().stream().filter(review -> review.getRoom().getUserId() == userId)
 				.collect(Collectors.toList());
 	}
@@ -74,5 +71,4 @@ public class ReviewService {
 	public ReviewsForRoomDTO convertReviewToDTO(Review review) {
 		return new ReviewsForRoomDTO(review.getUser().viewAllNames(), review.getDate(),review.getText());
 	}
-
 }

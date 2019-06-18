@@ -10,7 +10,8 @@ import lombok.Setter;
 @Setter
 @AllArgsConstructor
 public class RoomListDTO {
-	private String details;
+	private String mainPhoto;
+	private String name;
 	private String city;
 	private double rating;
 	private int timesRated;

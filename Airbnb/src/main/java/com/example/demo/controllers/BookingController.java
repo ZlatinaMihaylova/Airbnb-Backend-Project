@@ -7,6 +7,7 @@ import com.example.demo.exceptions.ElementNotFoundException;
 import com.example.demo.exceptions.UnauthorizedException;
 import com.example.demo.service.BookingService;
 import com.example.demo.service.MessageService;
+import com.example.demo.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -22,7 +23,7 @@ public class BookingController {
 
     @PostMapping("/rooms/booking")
     public long makeReservation(@RequestBody RoomBookingDTO reservation, HttpServletRequest request) throws ElementNotFoundException, UnauthorizedException, BookingIsOverlapingException, BadRequestException {
-        long id = UserController.authentication(request);
+        long id = UserService.authentication(request);
         return bookingService.makeReservation(reservation, id);
     }
 

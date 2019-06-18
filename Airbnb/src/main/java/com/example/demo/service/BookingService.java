@@ -41,7 +41,7 @@ public class BookingService {
             throw new UnauthorizedException("User can not book hiw own room!");
         }
         Booking result = new Booking(null, reservation.getStartDate(), reservation.getEndDate(),
-                userService.findById(userId), room);
+                userService.getUserById(userId), room);
         validateReservationDates(result);
         checkForOverlappingDates(result);
         bookingRepository.saveAndFlush(result);

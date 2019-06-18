@@ -19,6 +19,8 @@ import lombok.Setter;
 @Table(name="cities")
 @Getter
 @Setter
+@AllArgsConstructor
+@NoArgsConstructor
 public class City {
 	
 	@Id

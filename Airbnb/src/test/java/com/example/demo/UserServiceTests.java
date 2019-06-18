@@ -7,8 +7,10 @@ import com.example.demo.dto.EditProfileDTO;
 import com.example.demo.dto.LoginDTO;
 import com.example.demo.dto.RoomListDTO;
 import com.example.demo.dto.UserProfileDTO;
+import com.example.demo.exceptions.BadRequestException;
 import com.example.demo.exceptions.ElementNotFoundException;
 import com.example.demo.exceptions.SignUpException;
+import com.example.demo.model.Room;
 import com.example.demo.model.User;
 import com.example.demo.service.ReviewService;
 import com.example.demo.service.RoomService;
@@ -47,6 +49,9 @@ public class UserServiceTests {
     @InjectMocks
     private UserService userService;
 
+    @Mock
+    private UserService userServiceMock;
+
     @InjectMocks
     private RoomService roomService;
 
@@ -56,11 +61,30 @@ public class UserServiceTests {
     @InjectMocks
     private ReviewService reviewService;
 
+    @Mock
     private User user;
+    private EditProfileDTO editProfileDTO;
 
     @Before
     public void init() {
         user = new User(1L, "FirstName", "LastName", "goodPassword1234", "email@gmail.com", LocalDate.now(),"1234",null );
+        editProfileDTO = new EditProfileDTO("NewFirstName",
+                "NewLastName", "newGoodPassword1234", "NewEmail@gmail.com", LocalDate.now().minusMonths(2),"new1234");
+    }
+
+    @Test(expected = ElementNotFoundException.class)
+    public void findUserByIdNotFound() throws ElementNotFoundException  {
+        Mockito.when(userRepository.findById(user.getId())).thenReturn(Optional.empty());
+        Mockito.when(roomService.getUserRooms(user.getId())).thenReturn((new LinkedList<>()));
+        userService.getUserById(user.getId());
+    }
+
+    @Test
+    public void findUserById() throws ElementNotFoundException {
+        Mockito.when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
+        Mockito.when(roomService.getUserRooms(user.getId())).thenReturn(new LinkedList<>());
+        Mockito.when(reviewService.getAllReviewsForUser(user.getId())).thenReturn(new LinkedList<>());
+        Assert.assertEquals(user, userService.getUserById(user.getId()));
     }
 
     @Test(expected = SignUpException.class)
@@ -82,23 +106,7 @@ public class UserServiceTests {
     @Test
     public void testSignUpOK() throws SignUpException, NoSuchAlgorithmException, UnsupportedEncodingException  {
          userService.signUp(user);
-    }
-/*
-    @Test(expected = ElementNotFoundException.class)
-    public void getUserByIdNotFound() throws ElementNotFoundException  {
-        Mockito.when(userRepository.findById(user.getId())).thenReturn(Optional.empty());
-        Mockito.when(roomService.getUserRooms(user.getId())).thenReturn((new LinkedList<>()));
-        Mockito.when(roomService.getUserReviews(user.getId())).thenReturn((new LinkedList<>()));
-        userService.getUserById(user.getId());
-    }
-
-    @Test
-    public void getUserById() throws ElementNotFoundException {
-        Mockito.when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
-        Mockito.when(roomService.getUserRooms(user.getId())).thenReturn(new LinkedList<>());
-        Mockito.when(roomService.getUserReviews(user.getId())).thenReturn(new LinkedList<>());
-        UserProfileDTO userProfileDTO = new UserProfileDTO(user.viewAllNames(), user.getPhone(), roomService.getUserRooms(user.getId()), roomService.getUserReviews(user.getId()));
-        Assert.assertEquals(userProfileDTO, userService.getUserById(user.getId()));
+         Mockito.verify(userRepository).saveAndFlush(user);
     }
 
     @Test(expected = ElementNotFoundException.class)
@@ -115,8 +123,63 @@ public class UserServiceTests {
         Assert.assertEquals(user,userService.login(new LoginDTO(user.getEmail(),user.getPassword())));
     }
 
+    @Test(expected = BadRequestException.class)
+    public void changeInformationBadEmailTest() throws BadRequestException, NoSuchAlgorithmException, UnsupportedEncodingException, NoSuchMethodException,InvocationTargetException,IllegalAccessException {
+        User editedUser = userService.changeInformation(1L,
+                new EditProfileDTO("NewFirstName",
+                        "NewLastName", "newGoodPassword1234", "bad email", LocalDate.now().minusMonths(2),"new1234"));
 
+    }
 
- */
+    @Test(expected = BadRequestException.class)
+    public void changeInformationBadPasswordTest() throws BadRequestException, NoSuchAlgorithmException, UnsupportedEncodingException, NoSuchMethodException,InvocationTargetException,IllegalAccessException {
+        User editedUser = userService.changeInformation(1L,
+                new EditProfileDTO("NewFirstName",
+                        "NewLastName", "1234", "NewEmail@gmail.com", LocalDate.now().minusMonths(2),"new1234"));
+
+    }
+
+    @Test(expected = BadRequestException.class)
+    public void changeEmailAlreadyUsedTest() throws BadRequestException, NoSuchAlgorithmException, UnsupportedEncodingException, NoSuchMethodException,InvocationTargetException,IllegalAccessException {
+        Mockito.when(userRepository.findByEmail(editProfileDTO.getEmail())).thenReturn(Optional.of(user));
+        User editedUser = userService.changeInformation(1L, editProfileDTO);
+    }
+
+    @Test
+    public void changeInformationTest() throws BadRequestException, NoSuchAlgorithmException, UnsupportedEncodingException, NoSuchMethodException,InvocationTargetException,IllegalAccessException {
+        User editedUser = userService.changeInformation(1L, editProfileDTO);
+        Method method = userService.getClass().getDeclaredMethod("encryptPassword", String.class);
+        method.setAccessible(true);
+
+        Assert.assertEquals(editedUser.getFirstName(), editProfileDTO.getFirstName());
+        Assert.assertEquals(editedUser.getLastName(), editProfileDTO.getLastName());
+        Assert.assertEquals(editedUser.getPassword(), method.invoke(userService,editProfileDTO.getPassword()).toString());
+        Assert.assertEquals(editedUser.getEmail(), editProfileDTO.getEmail());
+        Assert.assertEquals(editedUser.getPhone(), editProfileDTO.getPhone());
+    }
+
+    @Test(expected = ElementNotFoundException.class)
+    public  void getFavouritesUserNotFoundTest()throws ElementNotFoundException {
+        List<Room> rooms = new LinkedList<>();
+        rooms.add(new Room());
+        rooms.add(new Room());
+        rooms.add(new Room());
+        rooms.add(new Room());
+
+        user.setFavourites(rooms);
+        Assert.assertEquals(rooms, userService.viewFavouriteRooms(user.getId()));
+    }
+
+    @Test
+    public  void getFavouritesTest()throws ElementNotFoundException {
+        List<Room> rooms = new LinkedList<>();
+        rooms.add(new Room());
+        rooms.add(new Room());
+        rooms.add(new Room());
+        rooms.add(new Room());
+        Mockito.when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
+        user.setFavourites(rooms);
+        Assert.assertEquals(rooms, userService.viewFavouriteRooms(user.getId()));
+    }
 
 }

@@ -35,7 +35,9 @@ public class Room {
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
-	
+
+	@NonNull
+	private String name;
 	@NonNull
 	private String address;
 	@NonNull

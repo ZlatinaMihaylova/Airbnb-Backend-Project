@@ -28,7 +28,6 @@ public class MessageService {
 	
 	public Map<Long, TreeSet<Message>> getUserAllMessages(long userId){
 		Map<Long, TreeSet<Message>> userAllMessages = new HashMap<Long, TreeSet<Message>>();
-		
 		for (Message message : messageRepository.findAll()) {
 			Long otherUserId = null;
 			if (message.getSenderId().equals(userId)) {
@@ -53,12 +52,10 @@ public class MessageService {
 	public Set<ChatListDTO> getAllMessagesForMessagePage(long userId) throws ElementNotFoundException {
 		Map<Long, TreeSet<Message>> userAllMessages = new HashMap<Long, TreeSet<Message>>();
 		userAllMessages = this.getUserAllMessages(userId);
-		
 		Set<ChatListDTO> messagesList = new TreeSet<ChatListDTO>((m1,m2) -> m2.getTimeOfLastMessage().compareTo(m1.getTimeOfLastMessage()));
-		
 		for (Entry<Long, TreeSet<Message>> entry: userAllMessages.entrySet()) {
 			Message message = entry.getValue().last();
-			messagesList.add(new ChatListDTO(userService.findById(userId).viewAllNames()
+			messagesList.add(new ChatListDTO(userService.getUserById(userId).viewAllNames()
 					,message.getText(),message.getDateTime()));
 		}
 		return messagesList;
@@ -67,14 +64,13 @@ public class MessageService {
 	public Set<ChatWithUserDTO> getMessagesWithUserById(long userId, long otherUserId) throws ElementNotFoundException{
 		Set<ChatWithUserDTO> chat = new  TreeSet<ChatWithUserDTO>((m1,m2) -> m1.getTime().compareTo(m2.getTime()));
 		Set<Message> messages = new TreeSet<Message>((m1,m2) -> m1.getDateTime().compareTo(m2.getDateTime()));
-
 		messages = this.getUserAllMessages(userId).get(otherUserId);
 		if ( messages.isEmpty()) {
 			throw new ElementNotFoundException("No messages with this user!");
 		}
 		
 		for ( Message m : messages) {
-			chat.add(new ChatWithUserDTO( userService.findById(userId).viewAllNames(),
+			chat.add(new ChatWithUserDTO( userService.getUserById(userId).viewAllNames(),
 					m.getText(), m.getDateTime()));
 		}
 		return chat;
@@ -82,10 +78,8 @@ public class MessageService {
 	
 	public void sendMessage(long senderId, long receiverId, String text) throws ElementNotFoundException {
 		LocalDateTime time = LocalDateTime.now();
-
-		userService.findById(senderId);
-		userService.findById(receiverId);
-
+		userService.getUserById(senderId);
+		userService.getUserById(receiverId);
 		Message message = new Message(null,senderId,receiverId,text, time);
 		messageRepository.saveAndFlush(message);
 	}

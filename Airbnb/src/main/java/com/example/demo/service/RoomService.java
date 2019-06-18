@@ -37,7 +37,6 @@ public class RoomService {
 	@Autowired
 	private BookingService bookingService;
 
-
 	@Autowired
 	private PhotoRepository photoRepository;
 
@@ -55,12 +54,13 @@ public class RoomService {
 		return roomRepository.findAll();
 	}
 
-	public long addRoom(RoomAddDTO room, Long userId) throws ElementNotFoundException {
+	public Room addRoom(RoomAddDTO room, Long userId) throws ElementNotFoundException {
 		if (!cityRepository.findByName(room.getCity()).isPresent()) {
 			City c = new City();
 			c.setName(room.getCity());
 			cityRepository.save(c);
 		}
+		Set<Amenity> amenities = new HashSet<>();
 		for (String amenity : room.getAmenities()){
 			if (!amenityRepository.findByName(amenity).isPresent()) {
 				Amenity newAmenity = new Amenity();
@@ -68,18 +68,16 @@ public class RoomService {
 				newAmenity.setName(amenity);
 				amenityRepository.save(newAmenity);
 			}
-		}
-		Set<Amenity> amenities = new HashSet<>();
-		for (String amenity : room.getAmenities()){
 			amenities.add(amenityRepository.findByName(amenity).orElseThrow(() -> new ElementNotFoundException("Amenity not found")));
 		}
-		Room result = new Room(null, room.getAddress(), room.getGuests(), room.getBedrooms(), room.getBeds(),
+
+		Room result = new Room(null, room.getName(), room.getAddress(), room.getGuests(), room.getBedrooms(), room.getBeds(),
 				room.getBaths(), room.getPrice(), room.getDetails(), amenities,
 				cityRepository.findByName(room.getCity()).orElseThrow(() -> new ElementNotFoundException("City not found")), userId,null);
 
 		roomRepository.saveAndFlush(result);
 
-		return result.getId();
+		return result;
 	}
 
 	public void removeRoom(long roomId, long userId) throws ElementNotFoundException, UnauthorizedException {
@@ -88,32 +86,29 @@ public class RoomService {
 		this.removeAllPhotosForRoom(roomId);
 		reviewService.removeAllReviewsForRoom(roomId);
 		Room room = roomRepository.findById(roomId).orElseThrow(() -> new ElementNotFoundException("Room not found."));
-
 		List<User> inFavourites = room.getInFavourites();
 		for ( User u : inFavourites) {
 			u.getFavourites().remove(room);
 			userService.saveUserToDB(u);
 		}
-
 		Set<Amenity> amenities = room.getAmenities();
 		for ( Amenity amenity : amenities) {
 			amenity.getRooms().remove(room);
 			amenityRepository.saveAndFlush(amenity);
 		}
-
 		roomRepository.delete(roomRepository.findById(roomId).orElseThrow(() -> new ElementNotFoundException("Room not found!")));
 	}
 
-	public List<Room> getUserRooms(long userId) throws ElementNotFoundException{
+	public List<Room> getUserRooms(long userId) {
 		return roomRepository.findByUserId(userId);
 	}
 	
-	public void addRoomInFavourites(long userId, long roomId) throws ElementNotFoundException, UnauthorizedException {
+	public void addRoomInFavourites(long userId, long roomId) throws ElementNotFoundException,UnauthorizedException {
 		Room room = getRoomById(roomId);
 		if ( room.getUserId() == userId) {
 			throw new UnauthorizedException("User can not put his own room in Favourites!");
 		}
-		User user = userService.findById(userId);
+		User user = userService.getUserById(userId);
 		room.getInFavourites().add(user);
 		roomRepository.saveAndFlush(room);
 		user.getFavourites().add(room);
@@ -124,21 +119,18 @@ public class RoomService {
 		return roomRepository.findByCityName(cityName);
 	}
 
-	public List<Room> getRoomsBySearchDTO(SearchRoomDTO searchRoomDTO) throws ElementNotFoundException{
-		List<Room> rooms = roomRepository
+	public List<Room> getRoomsBySearchDTO(SearchRoomDTO searchRoomDTO) {
+		return roomRepository
 				.findByCityName(searchRoomDTO.getCity())
 				.stream()
 				.filter(room -> isRoomFree(room, searchRoomDTO.getStartDate(), searchRoomDTO.getEndDate()))
 				.filter(room -> room.getGuests() >= searchRoomDTO.getGuests())
 				.collect(Collectors.toList());
-		return rooms;
 	}
 	
 	public long addPhoto(long roomId, long userId , PhotoAddDTO p) throws ElementNotFoundException, UnauthorizedException {
 		this.checkRoomOwner(roomId, userId);
-		
 		Photo photo = new Photo(null, p.getUrl(), roomRepository.findById(roomId).orElseThrow(() -> new ElementNotFoundException("Room not found!")));
-		
 		photoRepository.saveAndFlush(photo);
 		return photo.getId();
 	}
@@ -149,10 +141,7 @@ public class RoomService {
 	}
 	
 	private void removeAllPhotosForRoom(long roomId) {
-		Set<Photo> photos = photoRepository.findAll().stream()
-				.filter(p -> p.getRoom().getId() == roomId)
-				.collect(Collectors.toSet());
-		
+		List<Photo> photos = photoRepository.findByRoomId(roomId);
 		photoRepository.deleteAll(photos);
 	}
 
@@ -161,34 +150,29 @@ public class RoomService {
 		return room.getInFavourites();
 	}
 	
-	public void checkRoomOwner(long roomId, long userId) throws ElementNotFoundException,UnauthorizedException {
+	void checkRoomOwner(long roomId, long userId) throws ElementNotFoundException,UnauthorizedException {
 		Room room = roomRepository.findById(roomId).orElseThrow(() -> new ElementNotFoundException("Room not found!"));
-
 		if ( room.getUserId() != userId) {
 			throw new UnauthorizedException("User is not authorised");
 		}
 	}
 
-	public boolean isRoomFree(Room room, LocalDate startDate, LocalDate endDate) {
+	private boolean isRoomFree(Room room, LocalDate startDate, LocalDate endDate) {
 		return bookingService.getAllBookingsForRoom(room.getId()).stream().noneMatch(booking -> booking.overlap(startDate, endDate));
 	}
 
-
 	public RoomListDTO convertRoomToDTO(Room room) {
-		return new RoomListDTO(room.getDetails(), room.getCity().getName(), reviewService.getRoomRating(room), reviewService.getRoomTimesRated(room));
+		return new RoomListDTO(getMainPhoto(room.getId()),room.getName(), room.getCity().getName(),
+				reviewService.getRoomRating(room), reviewService.getRoomTimesRated(room));
 	}
 
-
 	public RoomInfoDTO convertRoomToRoomInfoDTO(Room room) {
-		Set<String> amenities = room.getAmenities().stream().map(amenity -> amenity.getName())
-				.collect(Collectors.toSet());
-
-		Set<String> photos = photoRepository.findByRoomId(room.getId()).stream()
-				.map(photo -> new String(photo.getUrl())).collect(Collectors.toSet());
-
-		return new RoomInfoDTO(room.getAddress(), room.getGuests(), room.getBedrooms(), room.getBeds(), room.getBaths(),
+		List<String> amenities = room.getAmenities().stream().map(amenity -> amenity.getName())
+				.collect(Collectors.toList());
+		List<String> photos = photoRepository.findByRoomId(room.getId()).stream()
+				.map(photo -> photo.getUrl()).collect(Collectors.toList());
+		return new RoomInfoDTO(getMainPhoto(room.getId()),room.getName(),room.getAddress(), room.getGuests(), room.getBedrooms(), room.getBeds(), room.getBaths(),
 				room.getPrice(), room.getDetails(), photos, amenities);
-
 	}
 
 	public List<LocalDate> getRoomAvailability(long roomId) throws  ElementNotFoundException {
@@ -196,5 +180,11 @@ public class RoomService {
 		Room room = getRoomById(roomId);
 		return Stream.iterate(now, date -> date.plusDays(1)).limit(365).filter(day -> isRoomFree(room, day, day)).collect(Collectors.toList());
 	}
-
+	public String getMainPhoto(long roomId) {
+		if ( !photoRepository.findByRoomId(roomId).isEmpty()){
+			return photoRepository.findByRoomId(roomId).stream().findFirst().get().getUrl();
+		}else {
+			return "";
+		}
+	}
 }
