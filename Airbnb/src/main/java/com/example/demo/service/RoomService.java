@@ -128,11 +128,10 @@ public class RoomService {
 				.collect(Collectors.toList());
 	}
 	
-	public long addPhoto(long roomId, long userId , PhotoAddDTO p) throws ElementNotFoundException, UnauthorizedException {
+	public void addPhoto(long roomId, long userId , PhotoAddDTO p) throws ElementNotFoundException, UnauthorizedException {
 		this.checkRoomOwner(roomId, userId);
 		Photo photo = new Photo(null, p.getUrl(), roomRepository.findById(roomId).orElseThrow(() -> new ElementNotFoundException("Room not found!")));
 		photoRepository.saveAndFlush(photo);
-		return photo.getId();
 	}
 	
 	public void removePhoto(long roomId, long userId , long photoId) throws ElementNotFoundException,UnauthorizedException {

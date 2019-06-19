@@ -6,6 +6,7 @@ import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import com.example.demo.exceptions.BadRequestException;
 import com.example.demo.exceptions.ElementNotFoundException;
 import com.example.demo.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,7 +33,7 @@ public class ReviewController {
 	}
 	
 	@PostMapping("/rooms/{roomId}/reviews")
-	public Set<ReviewsForRoomDTO> addReviewForRoom(@PathVariable long roomId, @RequestBody WriteReviewDTO reviewDTO,HttpServletRequest request) throws UnauthorizedException, ElementNotFoundException {
+	public Set<ReviewsForRoomDTO> addReviewForRoom(@PathVariable long roomId, @RequestBody WriteReviewDTO reviewDTO,HttpServletRequest request) throws UnauthorizedException, ElementNotFoundException, BadRequestException {
 		long id = UserService.authentication(request);
 		
 		reviewService.addReviewForRoom(id, roomId, reviewDTO);

@@ -15,17 +15,20 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.boot.autoconfigure.security.SecurityProperties;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.mock.http.MockHttpOutputMessage;
 
 import java.lang.reflect.Array;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -190,6 +193,17 @@ public class RoomServiceTests {
         Assert.assertEquals(new LinkedList<>(Arrays.asList(room)), roomService.getRoomsBySearchDTO(searchRoomDTO));
     }
 
+    @Test
+    public void addPhoto() throws ElementNotFoundException, UnauthorizedException{
+        Mockito.when(roomRepository.findById(room.getId())).thenReturn(Optional.of(room));
+        Photo expected = new Photo(1L, "URL",room);
+        roomService.addPhoto(room.getId(), room.getUserId(), new PhotoAddDTO("URL"));
+        ArgumentCaptor<Photo> argument = ArgumentCaptor.forClass(Photo.class);
+        Mockito.verify(photoRepository).saveAndFlush(argument.capture());
+
+        Assert.assertEquals(expected.getUrl(), argument.getValue().getUrl());
+        Assert.assertEquals(expected.getRoom(), argument.getValue().getRoom());
+    }
 
     @Test
     public void removePhoto() throws ElementNotFoundException, UnauthorizedException {

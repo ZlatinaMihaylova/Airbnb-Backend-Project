@@ -84,9 +84,9 @@ public class RoomController {
 	}
 	
 	@PostMapping("/rooms/{roomId}/addPhoto")
-	public long addPhoto(@RequestBody PhotoAddDTO photo, @PathVariable long roomId ,HttpServletRequest request) throws UnauthorizedException, ElementNotFoundException {
+	public void addPhoto(@RequestBody PhotoAddDTO photo, @PathVariable long roomId ,HttpServletRequest request) throws UnauthorizedException, ElementNotFoundException {
 		long id = UserService.authentication(request);
-		return roomService.addPhoto(roomId, id, photo);
+		roomService.addPhoto(roomId, id, photo);
 	}
 	
 	@PostMapping("/rooms/{roomId}/removePhoto/{photoId}")

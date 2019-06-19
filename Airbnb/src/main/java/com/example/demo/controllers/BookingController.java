@@ -22,9 +22,9 @@ public class BookingController {
     private BookingService bookingService;
 
     @PostMapping("/rooms/booking")
-    public long makeReservation(@RequestBody RoomBookingDTO reservation, HttpServletRequest request) throws ElementNotFoundException, UnauthorizedException, BookingIsOverlapingException, BadRequestException {
+    public void makeReservation(@RequestBody RoomBookingDTO reservation, HttpServletRequest request) throws ElementNotFoundException, UnauthorizedException, BookingIsOverlapingException, BadRequestException {
         long id = UserService.authentication(request);
-        return bookingService.makeReservation(reservation, id);
+        bookingService.makeReservation(reservation, id);
     }
 
     @GetMapping("/rooms/bookings={roomId}")

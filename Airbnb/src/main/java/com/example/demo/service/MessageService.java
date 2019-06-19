@@ -1,11 +1,8 @@
 package com.example.demo.service;
 
 import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Set;
-import java.util.TreeSet;
 
 import com.example.demo.exceptions.ElementNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -49,10 +46,10 @@ public class MessageService {
 		return userAllMessages;
 	}
 	
-	public Set<ChatListDTO> getAllMessagesForMessagePage(long userId) throws ElementNotFoundException {
+	public List<ChatListDTO> getAllMessagesForMessagePage(long userId) throws ElementNotFoundException {
 		Map<Long, TreeSet<Message>> userAllMessages = new HashMap<Long, TreeSet<Message>>();
 		userAllMessages = this.getUserAllMessages(userId);
-		Set<ChatListDTO> messagesList = new TreeSet<ChatListDTO>((m1,m2) -> m2.getTimeOfLastMessage().compareTo(m1.getTimeOfLastMessage()));
+		List<ChatListDTO> messagesList = new LinkedList<>();
 		for (Entry<Long, TreeSet<Message>> entry: userAllMessages.entrySet()) {
 			Message message = entry.getValue().last();
 			messagesList.add(new ChatListDTO(userService.getUserById(userId).viewAllNames()
@@ -61,8 +58,8 @@ public class MessageService {
 		return messagesList;
 	}
 	
-	public Set<ChatWithUserDTO> getMessagesWithUserById(long userId, long otherUserId) throws ElementNotFoundException{
-		Set<ChatWithUserDTO> chat = new  TreeSet<ChatWithUserDTO>((m1,m2) -> m1.getTime().compareTo(m2.getTime()));
+	public List<ChatWithUserDTO> getMessagesWithUserById(long userId, long otherUserId) throws ElementNotFoundException{
+		List<ChatWithUserDTO> chat = new LinkedList<>();
 		Set<Message> messages = new TreeSet<Message>((m1,m2) -> m1.getDateTime().compareTo(m2.getDateTime()));
 		messages = this.getUserAllMessages(userId).get(otherUserId);
 		if ( messages.isEmpty()) {

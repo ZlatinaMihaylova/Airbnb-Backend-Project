@@ -35,7 +35,7 @@ public class BookingService {
         return bookingRepository.findByUserId(userId);
     }
 
-    public long makeReservation(RoomBookingDTO reservation, Long userId) throws ElementNotFoundException, BookingIsOverlapingException, UnauthorizedException, BadRequestException {
+    public void makeReservation(RoomBookingDTO reservation, Long userId) throws ElementNotFoundException, BookingIsOverlapingException, UnauthorizedException, BadRequestException {
         Room room = roomService.getRoomById(reservation.getRoomId());
         if ( room.getUserId().equals(userId)) {
             throw new UnauthorizedException("User can not book hiw own room!");
@@ -45,7 +45,6 @@ public class BookingService {
         validateReservationDates(result);
         checkForOverlappingDates(result);
         bookingRepository.saveAndFlush(result);
-        return result.getId();
     }
 
     public void removeAllBookingsFromRoom(long roomId,long userId) throws ElementNotFoundException {
@@ -59,8 +58,7 @@ public class BookingService {
         bookingRepository.deleteAll(bookings);
     }
 
-    public void removeBookingById(long bookingId, long userId, long roomId) throws  ElementNotFoundException, UnauthorizedException{
-        roomService.checkRoomOwner(roomId, userId);
+    public void removeBookingById(long bookingId) throws  ElementNotFoundException{
         bookingRepository.delete(bookingRepository.findById(bookingId).orElseThrow(() -> new ElementNotFoundException("Booking not found!")));
     }
 

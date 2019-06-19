@@ -7,6 +7,7 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 
+import com.example.demo.exceptions.BadRequestException;
 import com.example.demo.exceptions.ElementNotFoundException;
 import com.example.demo.model.Room;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -37,10 +38,13 @@ public class ReviewService {
 		return reviewRepository.findByRoomId(roomId);
 	}
 	
-	public void addReviewForRoom(long userId,long roomId, WriteReviewDTO reviewDTO) throws ElementNotFoundException, UnauthorizedException {
+	public void addReviewForRoom(long userId,long roomId, WriteReviewDTO reviewDTO) throws ElementNotFoundException, UnauthorizedException,BadRequestException {
 		LocalDateTime time = LocalDateTime.now();
 		if ( roomService.getRoomById(roomId).getUserId() == userId) {
 			throw new UnauthorizedException("User can not add review for his own room!");		
+		}
+		if ( reviewDTO.getStars() < 1 || reviewDTO.getStars() > 5) {
+			throw new BadRequestException("Wrong stars count!");
 		}
 		reviewRepository.saveAndFlush(new Review(null,time,reviewDTO.getText(),
 				userService.getUserById(userId),
@@ -57,8 +61,7 @@ public class ReviewService {
 	}
 
 	public void removeAllReviewsForRoom(long roomId) {
-		Set<Review> reviewsForRoom = reviewRepository.findByRoomId(roomId).stream()
-			.collect(Collectors.toSet());
+		List<Review> reviewsForRoom = reviewRepository.findByRoomId(roomId);
 		reviewRepository.deleteAll(reviewsForRoom);
 	}
 
