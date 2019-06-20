@@ -1,4 +1,4 @@
-package com.example.demo;
+package com.example.demo.ServicesTests;
 
 import com.example.demo.dao.ReviewRepository;
 import com.example.demo.dao.RoomRepository;
@@ -10,11 +10,13 @@ import com.example.demo.dto.UserProfileDTO;
 import com.example.demo.exceptions.BadRequestException;
 import com.example.demo.exceptions.ElementNotFoundException;
 import com.example.demo.exceptions.SignUpException;
+import com.example.demo.exceptions.UnauthorizedException;
 import com.example.demo.model.Room;
 import com.example.demo.model.User;
 import com.example.demo.service.ReviewService;
 import com.example.demo.service.RoomService;
 import com.example.demo.service.UserService;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -24,8 +26,10 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.mock.web.MockHttpSession;
 import org.springframework.test.context.TestPropertySource;
 
+import javax.servlet.http.HttpServletRequest;
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -72,6 +76,18 @@ public class UserServiceTests {
                 "NewLastName", "newGoodPassword1234", "NewEmail@gmail.com", LocalDate.now().minusMonths(2),"new1234");
     }
 
+    @Test
+    public void saveUserToDBTest() {
+        userService.saveUserToDB(user);
+        Mockito.verify(userRepository).saveAndFlush(user);
+    }
+
+    @Test
+    public void getAllUsersTest() {
+        Mockito.when(userRepository.findAll()).thenReturn(new LinkedList<>(Arrays.asList(user)));
+        Assert.assertEquals(new LinkedList<>(Arrays.asList(user)), userService.getAllUsers());
+    }
+
     @Test(expected = ElementNotFoundException.class)
     public void findUserByIdNotFound() throws ElementNotFoundException  {
         Mockito.when(userRepository.findById(user.getId())).thenReturn(Optional.empty());
@@ -99,7 +115,7 @@ public class UserServiceTests {
 
     @Test(expected = SignUpException.class)
     public void testAlreadyUsedEmail() throws SignUpException, NoSuchAlgorithmException, UnsupportedEncodingException {
-        Mockito.when(userRepository.findByEmail(user.getEmail())).thenReturn(Optional.of(new User()));
+        Mockito.when(userRepository.findByEmail(user.getEmail())).thenReturn(Optional.of(user));
         userService.signUp(new User(null, "FirstName", "LastName", "goodPassword1234", "email", LocalDate.now(),"1234",null ));
     }
 
@@ -182,4 +198,22 @@ public class UserServiceTests {
         Assert.assertEquals(rooms, userService.viewFavouriteRooms(user.getId()));
     }
 
+    @Test(expected = UnauthorizedException.class)
+    public void authenticationException() throws UnauthorizedException {
+        HttpServletRequest request = Mockito.mock(HttpServletRequest.class);
+        MockHttpSession session = Mockito.mock(MockHttpSession.class);
+        Mockito.when(request.getSession()).thenReturn(session);
+        session.setAttribute("userId", null);
+        UserService.authentication(request);
+    }
+
+    @Test(expected = UnauthorizedException.class)
+    public void authenticationOk() throws UnauthorizedException {
+        HttpServletRequest request = Mockito.mock(HttpServletRequest.class);
+        MockHttpSession session = Mockito.mock(MockHttpSession.class);
+        Mockito.when(request.getSession()).thenReturn(session);
+        session.setAttribute("userId", user.getId());
+        boolean result = user.getId().equals(UserService.authentication(request));
+        Assert.assertTrue(result);
+    }
 }

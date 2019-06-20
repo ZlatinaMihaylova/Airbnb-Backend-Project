@@ -1,4 +1,4 @@
-package com.example.demo;
+package com.example.demo.ServicesTests;
 
 import com.example.demo.dao.MessageRepository;
 import com.example.demo.dao.UserRepository;

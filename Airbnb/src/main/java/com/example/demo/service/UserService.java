@@ -46,8 +46,8 @@ public class UserService {
 		userRepository.saveAndFlush(user);
 	}
 
-	public Set<User> getAllUsers(){
-		return userRepository.findAll().stream().collect(Collectors.toSet());
+	public List<User> getAllUsers(){
+		return userRepository.findAll().stream().collect(Collectors.toList());
 	}
 
 	public User getUserById(long id) throws ElementNotFoundException {
