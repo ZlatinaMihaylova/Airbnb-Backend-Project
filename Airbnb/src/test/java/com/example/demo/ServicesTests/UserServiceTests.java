@@ -121,8 +121,8 @@ public class UserServiceTests {
 
     @Test
     public void testSignUpOK() throws SignUpException, NoSuchAlgorithmException, UnsupportedEncodingException  {
-         userService.signUp(user);
-         Mockito.verify(userRepository).saveAndFlush(user);
+        userService.signUp(user);
+        Mockito.verify(userRepository).saveAndFlush(user);
     }
 
     @Test(expected = ElementNotFoundException.class)

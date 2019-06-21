@@ -22,14 +22,14 @@ import lombok.Setter;
 @AllArgsConstructor
 @NoArgsConstructor
 public class City {
-	
+
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
-	
+
 	private String name;
 
 	@OneToMany(mappedBy = "city")
 	private Set<Room> rooms;
-	
+
 }

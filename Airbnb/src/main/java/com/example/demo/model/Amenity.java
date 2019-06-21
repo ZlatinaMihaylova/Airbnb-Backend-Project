@@ -4,7 +4,9 @@ import java.util.Set;
 
 import javax.persistence.*;
 
+import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NonNull;
 import lombok.Setter;
 
 @Entity
@@ -16,7 +18,8 @@ public class Amenity {
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
-	
+
+	@NonNull
 	private String name;
 
 	@ManyToMany(mappedBy = "amenities",cascade = CascadeType.ALL)

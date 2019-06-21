@@ -24,10 +24,10 @@ public class RoomService {
 
 	@Autowired
 	private RoomRepository roomRepository;
-	
+
 	@Autowired
 	private ReviewService reviewService;
-	
+
 	@Autowired
 	private MessageService messageService;
 
@@ -102,7 +102,7 @@ public class RoomService {
 	public List<Room> getUserRooms(long userId) {
 		return roomRepository.findByUserId(userId);
 	}
-	
+
 	public void addRoomInFavourites(long userId, long roomId) throws ElementNotFoundException,UnauthorizedException {
 		Room room = getRoomById(roomId);
 		if ( room.getUserId() == userId) {
@@ -114,7 +114,7 @@ public class RoomService {
 		user.getFavourites().add(room);
 		userService.saveUserToDB(user);
 	}
-	
+
 	public List<Room> getRoomsByCityName(String cityName) {
 		return roomRepository.findByCityName(cityName);
 	}
@@ -127,18 +127,18 @@ public class RoomService {
 				.filter(room -> room.getGuests() >= searchRoomDTO.getGuests())
 				.collect(Collectors.toList());
 	}
-	
+
 	public void addPhoto(long roomId, long userId , PhotoAddDTO p) throws ElementNotFoundException, UnauthorizedException {
 		this.checkRoomOwner(roomId, userId);
 		Photo photo = new Photo(null, p.getUrl(), roomRepository.findById(roomId).orElseThrow(() -> new ElementNotFoundException("Room not found!")));
 		photoRepository.saveAndFlush(photo);
 	}
-	
+
 	public void removePhoto(long roomId, long userId , long photoId) throws ElementNotFoundException,UnauthorizedException {
 		this.checkRoomOwner(roomId, userId);
 		photoRepository.delete(photoRepository.findById(photoId).orElseThrow(() -> new ElementNotFoundException("Photo not found!")));
 	}
-	
+
 	private void removeAllPhotosForRoom(long roomId) {
 		List<Photo> photos = photoRepository.findByRoomId(roomId);
 		photoRepository.deleteAll(photos);
@@ -148,7 +148,7 @@ public class RoomService {
 		Room room = getRoomById(roomId);
 		return room.getInFavourites();
 	}
-	
+
 	void checkRoomOwner(long roomId, long userId) throws ElementNotFoundException,UnauthorizedException {
 		Room room = roomRepository.findById(roomId).orElseThrow(() -> new ElementNotFoundException("Room not found!"));
 		if ( room.getUserId() != userId) {

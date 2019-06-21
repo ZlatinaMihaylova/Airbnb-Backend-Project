@@ -22,7 +22,7 @@ public class MessageService {
 
 	@Autowired
 	private UserService userService;
-	
+
 	public Map<Long, TreeSet<Message>> getUserAllMessages(long userId){
 		Map<Long, TreeSet<Message>> userAllMessages = new HashMap<Long, TreeSet<Message>>();
 		for (Message message : messageRepository.findAll()) {
@@ -33,7 +33,7 @@ public class MessageService {
 			if (message.getReceiverId().equals(userId)) {
 				otherUserId = message.getSenderId();
 			}
-			
+
 			if (otherUserId != null ) {
 				if ( userAllMessages.containsKey(otherUserId)) {
 					userAllMessages.get(otherUserId).add(message);
@@ -45,7 +45,7 @@ public class MessageService {
 		}
 		return userAllMessages;
 	}
-	
+
 	public List<ChatListDTO> getAllMessagesForMessagePage(long userId) throws ElementNotFoundException {
 		Map<Long, TreeSet<Message>> userAllMessages = new HashMap<Long, TreeSet<Message>>();
 		userAllMessages = this.getUserAllMessages(userId);
@@ -57,7 +57,7 @@ public class MessageService {
 		}
 		return messagesList;
 	}
-	
+
 	public List<ChatWithUserDTO> getMessagesWithUserById(long userId, long otherUserId) throws ElementNotFoundException{
 		List<ChatWithUserDTO> chat = new LinkedList<>();
 		Set<Message> messages = new TreeSet<Message>((m1,m2) -> m1.getDateTime().compareTo(m2.getDateTime()));
@@ -65,14 +65,14 @@ public class MessageService {
 		if ( messages.isEmpty()) {
 			throw new ElementNotFoundException("No messages with this user!");
 		}
-		
+
 		for ( Message m : messages) {
 			chat.add(new ChatWithUserDTO( userService.getUserById(userId).viewAllNames(),
 					m.getText(), m.getDateTime()));
 		}
 		return chat;
 	}
-	
+
 	public void sendMessage(long senderId, long receiverId, String text) throws ElementNotFoundException {
 		LocalDateTime time = LocalDateTime.now();
 		userService.getUserById(senderId);

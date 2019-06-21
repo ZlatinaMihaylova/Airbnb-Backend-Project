@@ -29,7 +29,7 @@ import com.example.demo.service.RoomService;;
 
 @RestController
 public class RoomController {
-	
+
 	@Autowired
 	private RoomService roomService;
 
@@ -65,7 +65,7 @@ public class RoomController {
 	public List<RoomListDTO> getUserRooms(@PathVariable long userId,HttpServletRequest request) throws UnauthorizedException, ElementNotFoundException {
 		return roomService.getUserRooms(userId).stream().map(room -> roomService.convertRoomToDTO(room)).collect(Collectors.toList());
 	}
-	
+
 	@GetMapping("/rooms/{roomId}/addInFavourites")
 	public List<RoomListDTO> addRoomInFavourites(@PathVariable long roomId,HttpServletRequest request,HttpServletResponse response) throws ElementNotFoundException, UnauthorizedException {
 		long id = UserService.authentication(request);
@@ -82,13 +82,13 @@ public class RoomController {
 	public List<RoomListDTO> getRoomsBySearchDTO(@RequestBody SearchRoomDTO searchRoomDTO) throws ElementNotFoundException {
 		return roomService.getRoomsBySearchDTO(searchRoomDTO).stream().map(room -> roomService.convertRoomToDTO(room)).collect(Collectors.toList());
 	}
-	
+
 	@PostMapping("/rooms/{roomId}/addPhoto")
 	public void addPhoto(@RequestBody PhotoAddDTO photo, @PathVariable long roomId ,HttpServletRequest request) throws UnauthorizedException, ElementNotFoundException {
 		long id = UserService.authentication(request);
 		roomService.addPhoto(roomId, id, photo);
 	}
-	
+
 	@PostMapping("/rooms/{roomId}/removePhoto/{photoId}")
 	public void removePhoto(@PathVariable long roomId ,@PathVariable long photoId ,HttpServletRequest request) throws UnauthorizedException, ElementNotFoundException {
 		long id = UserService.authentication(request);

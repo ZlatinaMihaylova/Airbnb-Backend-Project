@@ -34,10 +34,10 @@ public class UserService {
 
 	@Autowired
 	private BookingService bookingService;
-	
+
 	@Autowired
 	private RoomService roomService;
-	
+
 	@Autowired
 	private ReviewService reviewService;
 
@@ -59,7 +59,7 @@ public class UserService {
 				roomService.getUserRooms(user.getId()).stream().map(room -> roomService.convertRoomToDTO(room)).collect(Collectors.toList()),
 				reviewService.getAllReviewsForUser(user.getId()).stream().map(review -> reviewService.convertReviewToDTO(review)).collect(Collectors.toList()));
 	}
-	
+
 	public void signUp(User user) throws SignUpException, NoSuchAlgorithmException, UnsupportedEncodingException {
 		if ( !this.isPasswordValid(user.getPassword()) || !this.isValidEmailAddress(user.getEmail())) {
 			throw new SignUpException("Invalid email or password");
@@ -76,7 +76,7 @@ public class UserService {
 		String encryptedPassword = UserService.encryptPassword(loginDTO.getPassword());
 		return userRepository.findByEmailAndPassword(loginDTO.getEmail(), encryptedPassword).orElseThrow(() -> new ElementNotFoundException("User not found"));
 	}
-	
+
 	public User changeInformation(long userId, EditProfileDTO editProfileDTO) throws NoSuchAlgorithmException, UnsupportedEncodingException, BadRequestException {
 		if ( !this.isPasswordValid(editProfileDTO.getPassword()) || !this.isValidEmailAddress(editProfileDTO.getEmail())) {
 			throw new BadRequestException("Invalid email or password");
@@ -97,17 +97,17 @@ public class UserService {
 	}
 
 	private boolean isValidEmailAddress(String email) {
-        String ePattern = "^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@((\\[[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\])|(([a-zA-Z\\-0-9]+\\.)+[a-zA-Z]{2,}))$";
-        java.util.regex.Pattern p = java.util.regex.Pattern.compile(ePattern);
-        java.util.regex.Matcher m = p.matcher(email);
-        return m.matches();
+		String ePattern = "^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@((\\[[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\])|(([a-zA-Z\\-0-9]+\\.)+[a-zA-Z]{2,}))$";
+		java.util.regex.Pattern p = java.util.regex.Pattern.compile(ePattern);
+		java.util.regex.Matcher m = p.matcher(email);
+		return m.matches();
 	}
-	
+
 	// digit, lowercase, uppercase, at least 8 characters
 	private boolean isPasswordValid(String password) {
-	    String pattern = "(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=\\S+$).{8,}";
-	    return password.matches(pattern);
-	  }
+		String pattern = "(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=\\S+$).{8,}";
+		return password.matches(pattern);
+	}
 
 	private static String encryptPassword(String password) throws NoSuchAlgorithmException, UnsupportedEncodingException {
 		MessageDigest crypt = MessageDigest.getInstance("SHA-1");

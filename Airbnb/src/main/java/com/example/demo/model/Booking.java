@@ -23,39 +23,25 @@ import lombok.ToString;
 @NoArgsConstructor
 @AllArgsConstructor
 public class Booking {
-	
+
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
-	
+
 	private LocalDate startDate;
 	private LocalDate endDate;
 
 	@NonNull
 	@ManyToOne
 	private User user;
-	
+
 	@NonNull
 	@ManyToOne
 	private Room room;
-	
-	
+
+
 	public boolean overlap(LocalDate startDate, LocalDate endDate) {
 		return !(this.getStartDate().isAfter(endDate) || this.getEndDate().isEqual(startDate) || this.getEndDate().isBefore(startDate));
-		/*
-		if (b != null) {
-			return (this.getStartDate().isAfter(b.getStartDate()) && this.getStartDate().isBefore(b.getEndDate()))
-					|| (this.getEndDate().isAfter(b.getStartDate()) && this.getEndDate().isBefore(b.getEndDate()))
-					|| (this.getStartDate().isBefore(b.getStartDate()) && this.getEndDate().isAfter(b.getStartDate()))
-					|| (this.getStartDate().isBefore(b.getEndDate()) && this.getEndDate().isAfter(b.getEndDate()))
-					|| (this.getStartDate().isEqual(b.getStartDate())
-					|| (this.getStartDate().isEqual(b.getEndDate()))
-					|| (this.getEndDate().isEqual(b.getStartDate()))
-					|| (this.getEndDate().isEqual(b.getEndDate())));
-		}
-		return true;
-
-		 */
 	}
 
 }

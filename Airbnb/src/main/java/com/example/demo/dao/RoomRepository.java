@@ -14,6 +14,7 @@ import java.util.Set;
 public interface RoomRepository extends JpaRepository<Room, Integer>{
 
 	Optional<Room> findById(long id);
+	List<Room> findAll();
 	List<Room> findByUserId(long userId);
 	List<Room> findByCityName(String cityName);
 }

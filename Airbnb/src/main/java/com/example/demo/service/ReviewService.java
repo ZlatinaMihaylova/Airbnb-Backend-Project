@@ -23,7 +23,7 @@ import com.example.demo.model.Review;
 
 @Service
 public class ReviewService {
-	
+
 	@Autowired
 	private ReviewRepository reviewRepository;
 
@@ -32,16 +32,16 @@ public class ReviewService {
 
 	@Autowired
 	private UserService userService;
-	
+
 	public List<Review> getAllReviewsByRoomId(Long roomId) throws ElementNotFoundException {
 		roomService.getRoomById(roomId);
 		return reviewRepository.findByRoomId(roomId);
 	}
-	
+
 	public void addReviewForRoom(long userId,long roomId, WriteReviewDTO reviewDTO) throws ElementNotFoundException, UnauthorizedException,BadRequestException {
 		LocalDateTime time = LocalDateTime.now();
 		if ( roomService.getRoomById(roomId).getUserId() == userId) {
-			throw new UnauthorizedException("User can not add review for his own room!");		
+			throw new UnauthorizedException("User can not add review for his own room!");
 		}
 		if ( reviewDTO.getStars() < 1 || reviewDTO.getStars() > 5) {
 			throw new BadRequestException("Wrong stars count!");
@@ -50,12 +50,12 @@ public class ReviewService {
 				userService.getUserById(userId),
 				roomService.getRoomById(roomId), reviewDTO.getStars()));
 	}
-	
+
 	public double getRoomRating(Room room) {
 		return reviewRepository.findByRoomId(room.getId()).stream()
 				.mapToInt( review -> review.getStars()).average().orElse(0);
 	}
-	
+
 	public int getRoomTimesRated(Room room)  {
 		return (int) reviewRepository.findByRoomId(room.getId()).stream().count();
 	}

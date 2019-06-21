@@ -32,13 +32,13 @@ public class UserController {
 
 	@Autowired
 	private UserService userService;
-	
+
 	@Autowired
 	private RoomService roomService;
 
 	@Autowired
 	private BookingService bookingService;
-	
+
 	@PostMapping("/users")
 	public void signUp(@RequestBody User user,HttpServletRequest request) throws SignUpException, BadRequestException, NoSuchAlgorithmException, UnsupportedEncodingException{
 		HttpSession session = request.getSession();
@@ -85,13 +85,13 @@ public class UserController {
 		return userService.convertUserToDTO(userService.changeInformation(id, editProfileDTO));
 	}
 
-	
+
 	@GetMapping("/viewFavourites")
 	public List<RoomListDTO> viewFavouriteRooms(HttpServletRequest request) throws UnauthorizedException, ElementNotFoundException{
 		long id = UserService.authentication(request);
 		return userService.viewFavouriteRooms(id).stream().map(room -> roomService.convertRoomToDTO(room)).collect(Collectors.toList());
 	}
-	
+
 	@GetMapping("/myBookings")
 	public Set<RoomBookingDTO> showMyBookings(HttpServletRequest request) throws UnauthorizedException{
 		long id = UserService.authentication(request);

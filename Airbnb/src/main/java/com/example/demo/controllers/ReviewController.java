@@ -26,16 +26,16 @@ public class ReviewController {
 
 	@Autowired
 	private ReviewService reviewService;
-	
+
 	@GetMapping("/rooms/{roomId}/reviews")
 	public Set<ReviewsForRoomDTO> getAllReviewsByRoomId(@PathVariable long roomId) throws ElementNotFoundException {
 		return reviewService.getAllReviewsByRoomId(roomId).stream().map(review -> reviewService.convertReviewToDTO(review)).collect(Collectors.toSet());
 	}
-	
+
 	@PostMapping("/rooms/{roomId}/reviews")
 	public Set<ReviewsForRoomDTO> addReviewForRoom(@PathVariable long roomId, @RequestBody WriteReviewDTO reviewDTO,HttpServletRequest request) throws UnauthorizedException, ElementNotFoundException, BadRequestException {
 		long id = UserService.authentication(request);
-		
+
 		reviewService.addReviewForRoom(id, roomId, reviewDTO);
 		return this.getAllReviewsByRoomId(roomId);
 

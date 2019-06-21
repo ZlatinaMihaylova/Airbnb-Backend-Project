@@ -26,14 +26,14 @@ public class MessageController {
 
 	@Autowired
 	private MessageService messageService;
-	
-	
+
+
 	@GetMapping("/messages")
 	public List<ChatListDTO> getAllMessages(HttpServletRequest request) throws UnauthorizedException, ElementNotFoundException {
 		long id = UserService.authentication(request);
 		return messageService.getAllMessagesForMessagePage(id);
 	}
-	
+
 	@GetMapping("/messages/{userId}")
 	public List<ChatWithUserDTO> getMessagesWithUserById(@PathVariable long userId,HttpServletRequest request) throws UnauthorizedException, ElementNotFoundException{
 		long id = UserService.authentication(request);
@@ -42,7 +42,7 @@ public class MessageController {
 		}
 		return messageService.getMessagesWithUserById(id, userId);
 	}
-	
+
 	@PostMapping("/messages/{receiverId}")
 	public List<ChatWithUserDTO> sendMessage(@PathVariable long receiverId,@RequestBody String text,HttpServletRequest request) throws UnauthorizedException, ElementNotFoundException {
 		long id = UserService.authentication(request);
