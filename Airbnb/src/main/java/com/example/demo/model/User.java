@@ -15,6 +15,7 @@ import javax.persistence.JoinTable;
 import javax.persistence.ManyToMany;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
+import javax.validation.constraints.NotEmpty;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -36,6 +37,7 @@ public class User {
 	private Long id;
 	
 	@NonNull
+	@NotEmpty(message = "first name not empty")
 	private String firstName;
 	
 	@NonNull
@@ -46,7 +48,6 @@ public class User {
 	
 	@NonNull
 	private String email;
-	
 	
 	@NonNull
 	private LocalDate birthDate;

@@ -3,10 +3,7 @@ package com.example.demo.ServicesTests;
 import com.example.demo.dao.ReviewRepository;
 import com.example.demo.dao.RoomRepository;
 import com.example.demo.dao.UserRepository;
-import com.example.demo.dto.EditProfileDTO;
-import com.example.demo.dto.LoginDTO;
-import com.example.demo.dto.RoomListDTO;
-import com.example.demo.dto.UserProfileDTO;
+import com.example.demo.dto.*;
 import com.example.demo.exceptions.BadRequestException;
 import com.example.demo.exceptions.ElementNotFoundException;
 import com.example.demo.exceptions.SignUpException;
@@ -105,23 +102,24 @@ public class UserServiceTests {
 
     @Test(expected = SignUpException.class)
     public void testInvalidPassword() throws SignUpException, NoSuchAlgorithmException, UnsupportedEncodingException {
-        userService.signUp(new User(null, "FirstName", "LastName", "1234", "email@gmail.com", LocalDate.now(),"1234",null ));
+        userService.signUp(new SignUpDTO("FirstName", "LastName", "1234", "email@gmail.com", LocalDate.now(),"1234"));
     }
 
     @Test(expected = SignUpException.class)
     public void testInvalidEmail() throws SignUpException, NoSuchAlgorithmException, UnsupportedEncodingException {
-        userService.signUp(new User(null, "FirstName", "LastName", "goodPassword1234", "email", LocalDate.now(),"1234",null ));
+        userService.signUp(new SignUpDTO("FirstName", "LastName", "goodPassword1234", "email", LocalDate.now(),"1234" ));
     }
 
     @Test(expected = SignUpException.class)
     public void testAlreadyUsedEmail() throws SignUpException, NoSuchAlgorithmException, UnsupportedEncodingException {
         Mockito.when(userRepository.findByEmail(user.getEmail())).thenReturn(Optional.of(user));
-        userService.signUp(new User(null, "FirstName", "LastName", "goodPassword1234", "email", LocalDate.now(),"1234",null ));
+        userService.signUp(new SignUpDTO("FirstName", "LastName", "goodPassword1234", "email", LocalDate.now(),"1234"));
     }
 
     @Test
     public void testSignUpOK() throws SignUpException, NoSuchAlgorithmException, UnsupportedEncodingException  {
-        userService.signUp(user);
+
+        userService.signUp(new SignUpDTO( "FirstName", "LastName", "goodPassword1234", "email@gmail.com", LocalDate.now(),"1234"));
         Mockito.verify(userRepository).saveAndFlush(user);
     }
 

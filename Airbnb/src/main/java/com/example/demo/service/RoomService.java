@@ -15,8 +15,6 @@ import java.util.stream.Stream;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 ;
 
 @Service
@@ -54,7 +52,7 @@ public class RoomService {
 		return roomRepository.findAll();
 	}
 
-	public Room addRoom(RoomAddDTO room, Long userId) throws ElementNotFoundException {
+	public Room addRoom(AddRoomDTO room, Long userId) throws ElementNotFoundException {
 		if (!cityRepository.findByName(room.getCity()).isPresent()) {
 			City c = new City();
 			c.setName(room.getCity());
@@ -63,9 +61,8 @@ public class RoomService {
 		Set<Amenity> amenities = new HashSet<>();
 		for (String amenity : room.getAmenities()){
 			if (!amenityRepository.findByName(amenity).isPresent()) {
-				Amenity newAmenity = new Amenity();
 				amenity = amenity.substring(0,1).toUpperCase() + amenity.substring(1).toLowerCase();
-				newAmenity.setName(amenity);
+				Amenity newAmenity = new Amenity(null, amenity, new HashSet<>());
 				amenityRepository.save(newAmenity);
 			}
 			amenities.add(amenityRepository.findByName(amenity).orElseThrow(() -> new ElementNotFoundException("Amenity not found")));
@@ -128,7 +125,7 @@ public class RoomService {
 				.collect(Collectors.toList());
 	}
 
-	public void addPhoto(long roomId, long userId , PhotoAddDTO p) throws ElementNotFoundException, UnauthorizedException {
+	public void addPhoto(long roomId, long userId , AddPhotoDTO p) throws ElementNotFoundException, UnauthorizedException {
 		this.checkRoomOwner(roomId, userId);
 		Photo photo = new Photo(null, p.getUrl(), roomRepository.findById(roomId).orElseThrow(() -> new ElementNotFoundException("Room not found!")));
 		photoRepository.saveAndFlush(photo);
@@ -160,17 +157,17 @@ public class RoomService {
 		return bookingService.getAllBookingsForRoom(room.getId()).stream().noneMatch(booking -> booking.overlap(startDate, endDate));
 	}
 
-	public RoomListDTO convertRoomToDTO(Room room) {
-		return new RoomListDTO(getMainPhoto(room.getId()),room.getName(), room.getCity().getName(),
+	public GetListOfRoomDTO convertRoomToDTO(Room room) {
+		return new GetListOfRoomDTO(getMainPhoto(room.getId()),room.getName(), room.getCity().getName(),
 				reviewService.getRoomRating(room), reviewService.getRoomTimesRated(room));
 	}
 
-	public RoomInfoDTO convertRoomToRoomInfoDTO(Room room) {
+	public GetRoomInfoDTO convertRoomToRoomInfoDTO(Room room) {
 		List<String> amenities = room.getAmenities().stream().map(amenity -> amenity.getName())
 				.collect(Collectors.toList());
 		List<String> photos = photoRepository.findByRoomId(room.getId()).stream()
 				.map(photo -> photo.getUrl()).collect(Collectors.toList());
-		return new RoomInfoDTO(getMainPhoto(room.getId()),room.getName(),room.getAddress(), room.getGuests(), room.getBedrooms(), room.getBeds(), room.getBaths(),
+		return new GetRoomInfoDTO(getMainPhoto(room.getId()),room.getName(),room.getAddress(), room.getGuests(), room.getBedrooms(), room.getBeds(), room.getBaths(),
 				room.getPrice(), room.getDetails(), photos, amenities);
 	}
 

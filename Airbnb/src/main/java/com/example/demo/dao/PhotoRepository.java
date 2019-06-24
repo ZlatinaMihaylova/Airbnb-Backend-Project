@@ -13,6 +13,5 @@ import java.util.Optional;
 public interface PhotoRepository extends JpaRepository<Photo, Integer>{
 	
 	Optional<Photo> findById(long id);
-
 	List<Photo> findByRoomId(Long roomId);
 }

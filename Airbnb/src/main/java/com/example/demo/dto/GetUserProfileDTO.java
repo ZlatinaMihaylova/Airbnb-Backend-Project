@@ -1,9 +1,6 @@
 package com.example.demo.dto;
 
 import java.util.List;
-import java.util.Set;
-
-import com.example.demo.model.Room;
 
 import lombok.*;
 
@@ -12,11 +9,11 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(of={"name","phone","rooms","reviews"})
-public class UserProfileDTO {
+public class GetUserProfileDTO {
 
 	private String name;
 	private String phone;
-	private List<RoomListDTO> rooms;
-	private List<ReviewsForRoomDTO> reviews;
+	private List<GetListOfRoomDTO> rooms;
+	private List<GetReviewsForRoomDTO> reviews;
 
 }

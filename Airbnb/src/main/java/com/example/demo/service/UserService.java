@@ -5,9 +5,9 @@ import java.math.BigInteger;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.List;
-import java.util.Set;
 import java.util.stream.Collectors;
 
+import com.example.demo.dto.*;
 import com.example.demo.exceptions.BadRequestException;
 import com.example.demo.exceptions.ElementNotFoundException;
 import com.example.demo.exceptions.UnauthorizedException;
@@ -16,10 +16,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.example.demo.dao.UserRepository;
-import com.example.demo.dto.EditProfileDTO;
-import com.example.demo.dto.LoginDTO;
-import com.example.demo.dto.RoomListDTO;
-import com.example.demo.dto.UserProfileDTO;
 import com.example.demo.exceptions.SignUpException;
 import com.example.demo.model.User;
 
@@ -54,22 +50,22 @@ public class UserService {
 		return userRepository.findById(id).orElseThrow(() -> new ElementNotFoundException("User not found"));
 	}
 
-	public UserProfileDTO convertUserToDTO(User user) throws ElementNotFoundException {
-		return new UserProfileDTO(user.viewAllNames(), user.getPhone(),
+	public GetUserProfileDTO convertUserToDTO(User user) throws ElementNotFoundException {
+		return new GetUserProfileDTO(user.viewAllNames(), user.getPhone(),
 				roomService.getUserRooms(user.getId()).stream().map(room -> roomService.convertRoomToDTO(room)).collect(Collectors.toList()),
 				reviewService.getAllReviewsForUser(user.getId()).stream().map(review -> reviewService.convertReviewToDTO(review)).collect(Collectors.toList()));
 	}
 
-	public void signUp(User user) throws SignUpException, NoSuchAlgorithmException, UnsupportedEncodingException {
-		if ( !this.isPasswordValid(user.getPassword()) || !this.isValidEmailAddress(user.getEmail())) {
+	public void signUp(SignUpDTO signUpDTO) throws SignUpException, NoSuchAlgorithmException, UnsupportedEncodingException {
+		if ( !this.isPasswordValid(signUpDTO.getPassword()) || !this.isValidEmailAddress(signUpDTO.getEmail())) {
 			throw new SignUpException("Invalid email or password");
 		}
-		if (userRepository.findByEmail(user.getEmail()).isPresent()) {
+		if (userRepository.findByEmail(signUpDTO.getEmail()).isPresent()) {
 			throw new SignUpException("Email is already used");
 		}
-		User result = new User(null, user.getFirstName(), user.getLastName(),UserService.encryptPassword(user.getPassword()) , user.getEmail(),
-				user.getBirthDate(), user.getPhone(),null);
-		saveUserToDB(result);
+		User user = new User(null, signUpDTO.getFirstName(), signUpDTO.getLastName(),UserService.encryptPassword(signUpDTO.getPassword()) , signUpDTO.getEmail(),
+				signUpDTO.getBirthDate(), signUpDTO.getPhone(),null);
+		saveUserToDB(user);
 	}
 
 	public User login(LoginDTO loginDTO) throws ElementNotFoundException, NoSuchAlgorithmException, UnsupportedEncodingException {

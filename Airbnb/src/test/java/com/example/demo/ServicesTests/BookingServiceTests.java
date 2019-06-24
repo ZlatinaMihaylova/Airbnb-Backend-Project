@@ -1,16 +1,15 @@
 package com.example.demo.ServicesTests;
 
 import com.example.demo.dao.BookingRepository;
-import com.example.demo.dao.ReviewRepository;
 import com.example.demo.dao.RoomRepository;
-import com.example.demo.dto.RoomBookingDTO;
+import com.example.demo.dto.AddBookingDTO;
+import com.example.demo.dto.GetBookingInfoDTO;
 import com.example.demo.exceptions.BadRequestException;
 import com.example.demo.exceptions.BookingIsOverlapingException;
 import com.example.demo.exceptions.ElementNotFoundException;
 import com.example.demo.exceptions.UnauthorizedException;
 import com.example.demo.model.*;
 import com.example.demo.service.*;
-import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -26,8 +25,6 @@ import org.springframework.boot.test.context.SpringBootTest;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.Month;
 import java.util.*;
 
 @RunWith(MockitoJUnitRunner.Silent.class)
@@ -68,9 +65,9 @@ public class BookingServiceTests {
                 "Address", 5, 2,3,4,5, "Details", new HashSet<>(), new City(),2L, new LinkedList<>());
         bookings = new LinkedList<>(Arrays.asList(
                 new Booking(1L, LocalDate.now().plusDays(4), LocalDate.now().plusDays(6), user, room ),
-                new Booking(1L, LocalDate.now().plusDays(6), LocalDate.now().plusDays(10), user, room ),
-                new Booking(1L, LocalDate.now().plusDays(12), LocalDate.now().plusDays(13), user, room ),
-                new Booking(1L, LocalDate.now().plusDays(20), LocalDate.now().plusDays(25), user, room )));
+                new Booking(2L, LocalDate.now().plusDays(6), LocalDate.now().plusDays(10), user, room ),
+                new Booking(3L, LocalDate.now().plusDays(12), LocalDate.now().plusDays(13), user, room ),
+                new Booking(4L, LocalDate.now().plusDays(20), LocalDate.now().plusDays(25), user, room )));
     }
 
     @Test
@@ -81,9 +78,9 @@ public class BookingServiceTests {
 
     @Test(expected = UnauthorizedException.class)
     public void makeReservationUnauthorised()throws ElementNotFoundException, BookingIsOverlapingException, UnauthorizedException, BadRequestException {
-        RoomBookingDTO roomBookingDTO = new RoomBookingDTO(room.getId(),LocalDate.now().plusDays(4), LocalDate.now().plusDays(6));
+        AddBookingDTO roomBookingDTO = new AddBookingDTO(LocalDate.now().plusDays(4), LocalDate.now().plusDays(6));
         Mockito.when(roomServiceMock.getRoomById(room.getId())).thenReturn(room);
-        bookingService.makeReservation(roomBookingDTO, room.getUserId());
+        bookingService.makeReservation(room.getId(),roomBookingDTO, room.getUserId());
     }
 
     @Test
@@ -91,10 +88,10 @@ public class BookingServiceTests {
         Mockito.when(roomServiceMock.getRoomById(room.getId())).thenReturn(room);
         Mockito.when(userServiceMock.getUserById(user.getId())).thenReturn(user);
 
-        RoomBookingDTO roomBookingDTO = new RoomBookingDTO(room.getId(),LocalDate.now().plusDays(4), LocalDate.now().plusDays(6));
+        AddBookingDTO roomBookingDTO = new AddBookingDTO(LocalDate.now().plusDays(4), LocalDate.now().plusDays(6));
         Booking expected = new Booking(1l, LocalDate.now().plusDays(4), LocalDate.now().plusDays(6), user,room);
 
-        bookingService.makeReservation(roomBookingDTO, user.getId());
+        bookingService.makeReservation(room.getId(),roomBookingDTO, user.getId());
         ArgumentCaptor<Booking> argument = ArgumentCaptor.forClass(Booking.class);
         Mockito.verify(bookingRepository).saveAndFlush(argument.capture());
 
@@ -130,10 +127,10 @@ public class BookingServiceTests {
     @Test
     public void convertBookingToDTO()throws ElementNotFoundException, BookingIsOverlapingException, UnauthorizedException, BadRequestException {
         Booking booking = bookings.get(1);
-        RoomBookingDTO expected = new RoomBookingDTO(room.getId(),LocalDate.now().plusDays(6), LocalDate.now().plusDays(10) );
-        RoomBookingDTO result = BookingService.convertBookingToDTO(booking);
+        GetBookingInfoDTO expected = new GetBookingInfoDTO(booking.getUser().viewAllNames(),LocalDate.now().plusDays(6), LocalDate.now().plusDays(10) );
+        GetBookingInfoDTO result = BookingService.convertBookingToDTO(booking);
 
-        Assert.assertEquals(expected.getRoomId(), result.getRoomId());
+        Assert.assertEquals(expected.getUserNames(), result.getUserNames());
         Assert.assertEquals(expected.getStartDate(), result.getStartDate());
         Assert.assertEquals(expected.getEndDate(), result.getEndDate());
     }

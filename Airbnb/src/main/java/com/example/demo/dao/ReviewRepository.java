@@ -13,6 +13,5 @@ import java.util.Optional;
 public interface ReviewRepository extends JpaRepository<Review, Integer>{
 	
 	Optional<Review> findById(long id);
-
 	List<Review> findByRoomId(long roomId);
 }

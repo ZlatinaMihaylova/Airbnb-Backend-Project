@@ -14,6 +14,7 @@ import lombok.Setter;
 @EqualsAndHashCode
 public class ChatListDTO {
 
+
 	private String userName;
 	private String lastMessage;
 	private LocalDateTime timeOfLastMessage;

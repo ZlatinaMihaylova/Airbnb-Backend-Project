@@ -9,7 +9,7 @@ import lombok.Setter;
 @Getter
 @Setter
 @AllArgsConstructor
-public class RoomListDTO {
+public class GetListOfRoomDTO {
 	private String mainPhoto;
 	private String name;
 	private String city;

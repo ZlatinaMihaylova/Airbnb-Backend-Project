@@ -2,8 +2,8 @@ package com.example.demo.ServicesTests;
 
 import com.example.demo.dao.ReviewRepository;
 import com.example.demo.dao.RoomRepository;
-import com.example.demo.dto.ReviewsForRoomDTO;
-import com.example.demo.dto.WriteReviewDTO;
+import com.example.demo.dto.GetReviewsForRoomDTO;
+import com.example.demo.dto.AddReviewDTO;
 import com.example.demo.exceptions.BadRequestException;
 import com.example.demo.exceptions.ElementNotFoundException;
 import com.example.demo.exceptions.UnauthorizedException;
@@ -11,7 +11,6 @@ import com.example.demo.model.*;
 import com.example.demo.service.ReviewService;
 import com.example.demo.service.RoomService;
 import com.example.demo.service.UserService;
-import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -82,7 +81,7 @@ public class ReviewServiceTests {
     public void addReviewException() throws ElementNotFoundException, UnauthorizedException,BadRequestException {
         Mockito.when(roomServiceMock.getRoomById(room.getId())).thenReturn(room);
         user.setId(2L);
-        reviewService.addReviewForRoom(user.getId(),room.getId(), new WriteReviewDTO());
+        reviewService.addReviewForRoom(user.getId(),room.getId(), new AddReviewDTO());
     }
 
 
@@ -90,16 +89,16 @@ public class ReviewServiceTests {
     public void addReviewStarsException() throws ElementNotFoundException, UnauthorizedException, BadRequestException {
         Mockito.when(roomServiceMock.getRoomById(room.getId())).thenReturn(room);
         Mockito.when(userServiceMock.getUserById(user.getId())).thenReturn(user);
-        WriteReviewDTO writeReviewDTO = new WriteReviewDTO( "review", 6);
-        reviewService.addReviewForRoom(user.getId(),room.getId(), writeReviewDTO);
+        AddReviewDTO addReviewDTO = new AddReviewDTO( "review", 6);
+        reviewService.addReviewForRoom(user.getId(),room.getId(), addReviewDTO);
     }
 
     @Test(expected = BadRequestException.class)
     public void addReviewStarsException2() throws ElementNotFoundException, UnauthorizedException, BadRequestException {
         Mockito.when(roomServiceMock.getRoomById(room.getId())).thenReturn(room);
         Mockito.when(userServiceMock.getUserById(user.getId())).thenReturn(user);
-        WriteReviewDTO writeReviewDTO = new WriteReviewDTO( "review", 0);
-        reviewService.addReviewForRoom(user.getId(),room.getId(), writeReviewDTO);
+        AddReviewDTO addReviewDTO = new AddReviewDTO( "review", 0);
+        reviewService.addReviewForRoom(user.getId(),room.getId(), addReviewDTO);
     }
 
     @Test
@@ -107,7 +106,7 @@ public class ReviewServiceTests {
         Mockito.when(roomServiceMock.getRoomById(room.getId())).thenReturn(room);
         Mockito.when(userServiceMock.getUserById(user.getId())).thenReturn(user);
         Review expected = new Review(1L,LocalDateTime.now(), "review",user,room, 5);
-        reviewService.addReviewForRoom(user.getId(),room.getId(), new WriteReviewDTO( "review", 5));
+        reviewService.addReviewForRoom(user.getId(),room.getId(), new AddReviewDTO( "review", 5));
 
         ArgumentCaptor<Review> argument = ArgumentCaptor.forClass(Review.class);
         Mockito.verify(reviewRepository).saveAndFlush(argument.capture());
@@ -151,9 +150,9 @@ public class ReviewServiceTests {
     public void convertReviewToDTO() throws ElementNotFoundException {
         System.out.println(LocalDateTime.now());
         Review review = reviews.get(1);
-        ReviewsForRoomDTO expected = new ReviewsForRoomDTO("FirstName LastName",
+        GetReviewsForRoomDTO expected = new GetReviewsForRoomDTO("FirstName LastName",
                 LocalDateTime.of(2017,Month.FEBRUARY,3,6,30,40,50000),"Text");
-        ReviewsForRoomDTO result = reviewService.convertReviewToDTO(review);
+        GetReviewsForRoomDTO result = reviewService.convertReviewToDTO(review);
 
         Assert.assertEquals(expected.getUserName(), result.getUserName());
         Assert.assertEquals(expected.getDate(), result.getDate());

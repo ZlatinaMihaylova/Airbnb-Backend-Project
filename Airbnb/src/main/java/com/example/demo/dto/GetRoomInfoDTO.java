@@ -13,7 +13,7 @@ import lombok.Setter;
 @Getter
 @Setter
 @AllArgsConstructor
-public class RoomInfoDTO {
+public class GetRoomInfoDTO {
 	private String mainPhoto;
 	private String name;
 	private String address;

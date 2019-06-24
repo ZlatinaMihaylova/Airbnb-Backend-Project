@@ -10,7 +10,6 @@ import com.example.demo.service.BookingService;
 import com.example.demo.service.ReviewService;
 import com.example.demo.service.RoomService;
 import com.example.demo.service.UserService;
-import org.aspectj.apache.bcel.generic.TargetLostException;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -20,15 +19,11 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
-import org.springframework.boot.autoconfigure.security.SecurityProperties;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.mock.http.MockHttpOutputMessage;
 
-import java.lang.reflect.Array;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -78,7 +73,7 @@ public class RoomServiceTests {
     private Room room;
     private User user;
     private Photo photo;
-    private  City city = new City(3L, "City", new HashSet<Room>());
+    private  City city = new City(3L, "City");
 
     @Before
     public void init() {
@@ -114,7 +109,7 @@ public class RoomServiceTests {
 
     @Test
     public void addRoom() throws ElementNotFoundException {
-        RoomAddDTO newRoom = new RoomAddDTO("Room",
+        AddRoomDTO newRoom = new AddRoomDTO("Room",
                 "Address", 5, 2,3,4,5, "Details", new HashSet<>(), "City");
         Mockito.when(cityRepository.findByName(newRoom.getCity())).thenReturn(Optional.of(city));
         Room result = roomService.addRoom(newRoom,room.getUserId());
@@ -197,7 +192,7 @@ public class RoomServiceTests {
     public void addPhoto() throws ElementNotFoundException, UnauthorizedException{
         Mockito.when(roomRepository.findById(room.getId())).thenReturn(Optional.of(room));
         Photo expected = new Photo(1L, "URL",room);
-        roomService.addPhoto(room.getId(), room.getUserId(), new PhotoAddDTO("URL"));
+        roomService.addPhoto(room.getId(), room.getUserId(), new AddPhotoDTO("URL"));
         ArgumentCaptor<Photo> argument = ArgumentCaptor.forClass(Photo.class);
         Mockito.verify(photoRepository).saveAndFlush(argument.capture());
 
@@ -290,9 +285,9 @@ public class RoomServiceTests {
         Mockito.when(reviewService.getRoomRating(room)).thenReturn(1.0);
         Mockito.when(reviewService.getRoomTimesRated(room)).thenReturn(1);
 
-        RoomListDTO expected = new RoomListDTO(photo.getUrl(),room.getName(),room.getCity().getName(),
+        GetListOfRoomDTO expected = new GetListOfRoomDTO(photo.getUrl(),room.getName(),room.getCity().getName(),
                 reviewService.getRoomRating(room), reviewService.getRoomTimesRated(room));
-        RoomListDTO result = roomService.convertRoomToDTO(room);
+        GetListOfRoomDTO result = roomService.convertRoomToDTO(room);
 
         Assert.assertEquals(expected.getMainPhoto(), result.getMainPhoto());
         Assert.assertEquals(expected.getName(), result.getName());
@@ -308,12 +303,12 @@ public class RoomServiceTests {
         Mockito.when(reviewService.getRoomRating(room)).thenReturn(1.0);
         Mockito.when(reviewService.getRoomTimesRated(room)).thenReturn(1);
 
-        RoomInfoDTO expected = new RoomInfoDTO(photo.getUrl(),room.getName(),room.getAddress(),
+        GetRoomInfoDTO expected = new GetRoomInfoDTO(photo.getUrl(),room.getName(),room.getAddress(),
                 room.getGuests(),room.getBedrooms(),room.getBeds(),room.getBaths(),room.getPrice(),
                 room.getDetails(), photoRepository.findByRoomId(room.getId()).stream().map(photo -> photo.getUrl()).collect(Collectors.toList()),
                 room.getAmenities().stream().map(amenity -> amenity.getName()).collect(Collectors.toList()));
 
-        RoomInfoDTO result = roomService.convertRoomToRoomInfoDTO(room);
+        GetRoomInfoDTO result = roomService.convertRoomToRoomInfoDTO(room);
 
         Assert.assertEquals(expected.getMainPhoto(), result.getMainPhoto());
         Assert.assertEquals(expected.getName(), result.getName());

@@ -1,7 +1,8 @@
 package com.example.demo.service;
 
 import com.example.demo.dao.BookingRepository;
-import com.example.demo.dto.RoomBookingDTO;
+import com.example.demo.dto.AddBookingDTO;
+import com.example.demo.dto.GetBookingInfoDTO;
 import com.example.demo.exceptions.BadRequestException;
 import com.example.demo.exceptions.BookingIsOverlapingException;
 import com.example.demo.exceptions.ElementNotFoundException;
@@ -13,8 +14,6 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 @Service
 public class BookingService {
@@ -35,8 +34,8 @@ public class BookingService {
         return bookingRepository.findByUserId(userId);
     }
 
-    public void makeReservation(RoomBookingDTO reservation, Long userId) throws ElementNotFoundException, BookingIsOverlapingException, UnauthorizedException, BadRequestException {
-        Room room = roomService.getRoomById(reservation.getRoomId());
+    public void makeReservation(long roomId, AddBookingDTO reservation, Long userId) throws ElementNotFoundException, BookingIsOverlapingException, UnauthorizedException, BadRequestException {
+        Room room = roomService.getRoomById(roomId);
         if ( room.getUserId().equals(userId)) {
             throw new UnauthorizedException("User can not book hiw own room!");
         }
@@ -66,8 +65,8 @@ public class BookingService {
         return bookingRepository.findByRoomId(roomId);
     }
 
-    public static RoomBookingDTO convertBookingToDTO(Booking booking) {
-        return new RoomBookingDTO(booking.getRoom().getId(), booking.getStartDate(), booking.getEndDate());
+    public static GetBookingInfoDTO convertBookingToDTO(Booking booking) {
+        return new GetBookingInfoDTO(booking.getUser().viewAllNames(), booking.getStartDate(), booking.getEndDate());
     }
 
     private void validateReservationDates(Booking reservation) throws BadRequestException {

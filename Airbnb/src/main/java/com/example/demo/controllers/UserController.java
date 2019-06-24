@@ -8,6 +8,7 @@ import java.util.stream.Collectors;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
+import javax.validation.Valid;
 
 import com.example.demo.dto.*;
 import com.example.demo.exceptions.ElementNotFoundException;
@@ -40,23 +41,25 @@ public class UserController {
 	private BookingService bookingService;
 
 	@PostMapping("/users")
-	public void signUp(@RequestBody User user,HttpServletRequest request) throws SignUpException, BadRequestException, NoSuchAlgorithmException, UnsupportedEncodingException{
+	public void signUp(@RequestBody @Valid SignUpDTO signUpDTO, HttpServletRequest request) throws SignUpException, BadRequestException, NoSuchAlgorithmException, UnsupportedEncodingException{
 		HttpSession session = request.getSession();
 		if (session.getAttribute("userId") != null) {
 			throw new BadRequestException("User is already logged in");
 		}
-		userService.signUp(user);
+		userService.signUp(signUpDTO);
 	}
 
 	@PostMapping("/login")
-	public void login(@RequestBody LoginDTO user, HttpServletRequest request) throws ElementNotFoundException, BadRequestException, NoSuchAlgorithmException, UnsupportedEncodingException {
+	public GetUserProfileDTO login(@RequestBody @Valid LoginDTO loginDTO, HttpServletRequest request) throws ElementNotFoundException, BadRequestException, NoSuchAlgorithmException, UnsupportedEncodingException {
 		HttpSession session = request.getSession();
 		if (session.getAttribute("userId") != null) {
 			throw new BadRequestException("User is already logged in!");
 		}
-		User u = userService.login(user);
+		User user = userService.login(loginDTO);
 		session = request.getSession();
-		session.setAttribute("userId", u.getId());
+		session.setAttribute("userId", user.getId());
+
+		return userService.convertUserToDTO(userService.getUserById(user.getId()));
 	}
 
 	@PostMapping("/logout")
@@ -69,31 +72,31 @@ public class UserController {
 	}
 
 	@GetMapping("/users/{userId}")
-	public UserProfileDTO getUserDetails(@PathVariable long userId) throws ElementNotFoundException {
+	public GetUserProfileDTO getUserDetails(@PathVariable long userId) throws ElementNotFoundException {
 		return userService.convertUserToDTO(userService.getUserById(userId));
 	}
 
 	@GetMapping("/profile")
-	public UserProfileDTO getLoggedUserProfile(HttpServletRequest request) throws UnauthorizedException, ElementNotFoundException {
+	public GetUserProfileDTO getLoggedUserProfile(HttpServletRequest request) throws UnauthorizedException, ElementNotFoundException {
 		long id = UserService.authentication(request);
 		return userService.convertUserToDTO(userService.getUserById(id));
 	}
 
 	@PutMapping("/changeInformation")
-	public UserProfileDTO changeInformation(@RequestBody EditProfileDTO editProfileDTO,HttpServletRequest request) throws BadRequestException,UnauthorizedException, ElementNotFoundException, NoSuchAlgorithmException, UnsupportedEncodingException {
+	public GetUserProfileDTO changeInformation(@RequestBody @Valid EditProfileDTO editProfileDTO, HttpServletRequest request) throws BadRequestException,UnauthorizedException, ElementNotFoundException, NoSuchAlgorithmException, UnsupportedEncodingException {
 		long id = UserService.authentication(request);
 		return userService.convertUserToDTO(userService.changeInformation(id, editProfileDTO));
 	}
 
 
 	@GetMapping("/viewFavourites")
-	public List<RoomListDTO> viewFavouriteRooms(HttpServletRequest request) throws UnauthorizedException, ElementNotFoundException{
+	public List<GetListOfRoomDTO> viewFavouriteRooms(HttpServletRequest request) throws UnauthorizedException, ElementNotFoundException{
 		long id = UserService.authentication(request);
 		return userService.viewFavouriteRooms(id).stream().map(room -> roomService.convertRoomToDTO(room)).collect(Collectors.toList());
 	}
 
 	@GetMapping("/myBookings")
-	public Set<RoomBookingDTO> showMyBookings(HttpServletRequest request) throws UnauthorizedException{
+	public Set<GetBookingInfoDTO> showMyBookings(HttpServletRequest request) throws UnauthorizedException{
 		long id = UserService.authentication(request);
 		return bookingService.getAllUsersBookings(id).stream().map(booking -> BookingService.convertBookingToDTO(booking)).collect(Collectors.toSet());
 	}

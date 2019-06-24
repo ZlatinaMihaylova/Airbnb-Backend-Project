@@ -4,15 +4,14 @@ import java.util.Set;
 
 import javax.persistence.*;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NonNull;
-import lombok.Setter;
+import lombok.*;
 
 @Entity
 @Table(name="amenities")
 @Getter
 @Setter
+@AllArgsConstructor
+@NoArgsConstructor
 public class Amenity {
 	
 	@Id

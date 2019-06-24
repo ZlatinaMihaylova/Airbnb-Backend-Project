@@ -5,7 +5,9 @@ import java.util.Set;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.validation.Valid;
 
+import com.example.demo.dto.SendMessageDTO;
 import com.example.demo.exceptions.ElementNotFoundException;
 import com.example.demo.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -44,12 +46,12 @@ public class MessageController {
 	}
 
 	@PostMapping("/messages/{receiverId}")
-	public List<ChatWithUserDTO> sendMessage(@PathVariable long receiverId,@RequestBody String text,HttpServletRequest request) throws UnauthorizedException, ElementNotFoundException {
+	public List<ChatWithUserDTO> sendMessage(@PathVariable long receiverId, @RequestBody @Valid SendMessageDTO sendMessageDTO, HttpServletRequest request) throws UnauthorizedException, ElementNotFoundException {
 		long id = UserService.authentication(request);
 		if ( id == receiverId) {
 			throw new UnauthorizedException("User can not send message to himself!");
 		}
-		messageService.sendMessage(id, receiverId, text);
+		messageService.sendMessage(id, receiverId, sendMessageDTO.getText());
 		return this.getMessagesWithUserById(receiverId, request);
 	}
 }
