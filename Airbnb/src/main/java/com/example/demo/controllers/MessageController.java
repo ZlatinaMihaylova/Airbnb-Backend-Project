@@ -21,6 +21,7 @@ import com.example.demo.dto.ChatListDTO;
 import com.example.demo.dto.ChatWithUserDTO;
 import com.example.demo.exceptions.UnauthorizedException;
 import com.example.demo.service.MessageService;
+import org.springframework.web.servlet.ModelAndView;
 
 
 @RestController
@@ -36,7 +37,7 @@ public class MessageController {
 		return messageService.getAllMessagesForMessagePage(id);
 	}
 
-	@GetMapping("/messages/{userId}")
+	@GetMapping("/messages/userId={userId}")
 	public List<ChatWithUserDTO> getMessagesWithUserById(@PathVariable long userId,HttpServletRequest request) throws UnauthorizedException, ElementNotFoundException{
 		long id = UserService.authentication(request);
 		if ( id == userId) {
@@ -45,13 +46,13 @@ public class MessageController {
 		return messageService.getMessagesWithUserById(id, userId);
 	}
 
-	@PostMapping("/messages/{receiverId}")
-	public List<ChatWithUserDTO> sendMessage(@PathVariable long receiverId, @RequestBody @Valid SendMessageDTO sendMessageDTO, HttpServletRequest request) throws UnauthorizedException, ElementNotFoundException {
-		long id = UserService.authentication(request);
-		if ( id == receiverId) {
+	@PostMapping("/messages/userId={receiverId}")
+	public ModelAndView sendMessage(@PathVariable long receiverId, @RequestBody @Valid SendMessageDTO sendMessageDTO, HttpServletRequest request) throws UnauthorizedException, ElementNotFoundException {
+		long userId = UserService.authentication(request);
+		if ( userId == receiverId) {
 			throw new UnauthorizedException("User can not send message to himself!");
 		}
-		messageService.sendMessage(id, receiverId, sendMessageDTO.getText());
-		return this.getMessagesWithUserById(receiverId, request);
+		messageService.sendMessage(userId, receiverId, sendMessageDTO.getText());
+		return new ModelAndView("redirect:/messages/" + receiverId);
 	}
 }

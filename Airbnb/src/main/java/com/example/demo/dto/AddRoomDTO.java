@@ -1,5 +1,6 @@
 package com.example.demo.dto;
 
+import java.util.List;
 import java.util.Set;
 
 import com.example.demo.model.Amenity;
@@ -10,6 +11,7 @@ import lombok.NonNull;
 import lombok.Setter;
 
 import javax.validation.constraints.NotEmpty;
+import javax.validation.constraints.NotNull;
 
 @Getter
 @Setter
@@ -20,29 +22,30 @@ public class AddRoomDTO {
 	private String name;
 
 	@NotEmpty
+	private String city;
+
+	@NotEmpty
 	private String address;
 
-	@NotEmpty
+	@NotNull
 	private int guests;
 
-	@NotEmpty
+	@NotNull
 	private int bedrooms;
 
-	@NotEmpty
+	@NotNull
 	private int beds;
 
-	@NotEmpty
+	@NotNull
 	private int baths;
 
-	@NotEmpty
+	@NotNull
 	private int price;
 
 	@NotEmpty
 	private String details;
 
+	private List<String> amenities;
 
-	private Set<String> amenities;
 
-	@NotEmpty
-	private String city;
 }

@@ -47,7 +47,7 @@ public class Room {
 	@JoinTable(name ="rooms_amenities",
 			joinColumns = @JoinColumn(name = "room_id"),
 			inverseJoinColumns = @JoinColumn(name = "amenity_id"))
-	private Set<Amenity> amenities;
+	private List<Amenity> amenities;
 
 	@NonNull
 	@ManyToOne

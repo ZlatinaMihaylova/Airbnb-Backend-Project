@@ -20,6 +20,7 @@ import com.example.demo.dto.GetReviewsForRoomDTO;
 import com.example.demo.dto.AddReviewDTO;
 import com.example.demo.exceptions.UnauthorizedException;
 import com.example.demo.service.ReviewService;
+import org.springframework.web.servlet.ModelAndView;
 
 @RestController
 public class ReviewController {
@@ -27,17 +28,15 @@ public class ReviewController {
 	@Autowired
 	private ReviewService reviewService;
 
-	@GetMapping("/rooms/{roomId}/reviews")
+	@GetMapping("/rooms/roomId={roomId}/reviews")
 	public Set<GetReviewsForRoomDTO> getAllReviewsByRoomId(@PathVariable long roomId) throws ElementNotFoundException {
 		return reviewService.getAllReviewsByRoomId(roomId).stream().map(review -> reviewService.convertReviewToDTO(review)).collect(Collectors.toSet());
 	}
 
-	@PostMapping("/rooms/{roomId}/reviews")
-	public Set<GetReviewsForRoomDTO> addReviewForRoom(@PathVariable long roomId, @RequestBody @Valid AddReviewDTO reviewDTO, HttpServletRequest request) throws UnauthorizedException, ElementNotFoundException, BadRequestException {
-		long id = UserService.authentication(request);
-
-		reviewService.addReviewForRoom(id, roomId, reviewDTO);
-		return this.getAllReviewsByRoomId(roomId);
-
+	@PostMapping("/rooms/roomId={roomId}/reviews")
+	public ModelAndView addReviewForRoom(@PathVariable long roomId, @RequestBody @Valid AddReviewDTO reviewDTO, HttpServletRequest request) throws UnauthorizedException, ElementNotFoundException, BadRequestException {
+		long userId = UserService.authentication(request);
+		reviewService.addReviewForRoom(userId, roomId, reviewDTO);
+		return new ModelAndView("redirect:/rooms/" + roomId +"/reviews");
 	}
 }

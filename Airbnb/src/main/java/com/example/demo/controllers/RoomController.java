@@ -23,7 +23,8 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
 
-import com.example.demo.service.RoomService;;
+import com.example.demo.service.RoomService;
+import org.springframework.web.servlet.ModelAndView;;
 
 @RestController
 public class RoomController {
@@ -43,32 +44,34 @@ public class RoomController {
 	}
 
 	@GetMapping("/rooms")
-	public List<GetListOfRoomDTO> getAllRooms(HttpServletResponse response) throws ElementNotFoundException{
+	public List<GetListOfRoomDTO> getAllRooms() {
 		return roomService.getAllRooms().stream().map(room -> roomService.convertRoomToDTO(room)).collect(Collectors.toList());
 	}
 
 	@PostMapping("/rooms/create")
-	public GetRoomInfoDTO addRoom(@RequestBody @Valid AddRoomDTO newRoom, HttpServletRequest request) throws ElementNotFoundException, UnauthorizedException {
-		long id = UserService.authentication(request);
-		return roomService.convertRoomToRoomInfoDTO(roomService.addRoom(newRoom,id));
+	public ModelAndView addRoom(@RequestBody @Valid AddRoomDTO newRoom, HttpServletRequest request,HttpServletResponse response) throws ElementNotFoundException, UnauthorizedException {
+		long userId = UserService.authentication(request);
+		long roomId = roomService.addRoom(newRoom,userId).getId();
+		return new ModelAndView("redirect:/rooms/roomId=" + roomId);
+
 	}
 
-	@PostMapping("/rooms/delete/{roomId}")
+	@PostMapping("/rooms/roomId={roomId}/delete")
 	public void removeRoom(@PathVariable long roomId,HttpServletRequest request) throws UnauthorizedException, ElementNotFoundException {
 		long id = UserService.authentication(request);
 		roomService.removeRoom(roomId,id);
 	}
 
-	@GetMapping("{userId}/rooms")
-	public List<GetListOfRoomDTO> getUserRooms(@PathVariable long userId, HttpServletRequest request) throws UnauthorizedException, ElementNotFoundException {
+	@GetMapping("userId={userId}/rooms")
+	public List<GetListOfRoomDTO> getUserRooms(@PathVariable long userId) throws UnauthorizedException, ElementNotFoundException {
 		return roomService.getUserRooms(userId).stream().map(room -> roomService.convertRoomToDTO(room)).collect(Collectors.toList());
 	}
 
-	@GetMapping("/rooms/{roomId}/addInFavourites")
-	public List<GetListOfRoomDTO> addRoomInFavourites(@PathVariable long roomId, HttpServletRequest request, HttpServletResponse response) throws ElementNotFoundException, UnauthorizedException {
+	@GetMapping("/rooms/roomId={roomId}/addInFavourites")
+	public ModelAndView addRoomInFavourites(@PathVariable long roomId, HttpServletRequest request, HttpServletResponse response) throws ElementNotFoundException, UnauthorizedException {
 		long id = UserService.authentication(request);
 		roomService.addRoomInFavourites(id, roomId);
-		return userService.viewFavouriteRooms(id).stream().map(room -> roomService.convertRoomToDTO(room)).collect(Collectors.toList());
+		return new ModelAndView("redirect:/viewFavourites");
 	}
 
 	@GetMapping("/rooms/cityName={cityName}")
@@ -81,21 +84,21 @@ public class RoomController {
 		return roomService.getRoomsBySearchDTO(searchRoomDTO).stream().map(room -> roomService.convertRoomToDTO(room)).collect(Collectors.toList());
 	}
 
-	@PostMapping("/rooms/{roomId}/addPhoto")
-	public GetRoomInfoDTO addPhoto(@RequestBody @Valid AddPhotoDTO photo, @PathVariable long roomId , HttpServletRequest request) throws UnauthorizedException, ElementNotFoundException {
+	@PostMapping("/rooms/roomId={roomId}/addPhoto")
+	public ModelAndView addPhoto(@RequestBody @Valid AddPhotoDTO photo, @PathVariable long roomId , HttpServletRequest request) throws UnauthorizedException, ElementNotFoundException {
 		long id = UserService.authentication(request);
 		roomService.addPhoto(roomId, id, photo);
-		return roomService.convertRoomToRoomInfoDTO(roomService.getRoomById(roomId));
+		return new ModelAndView("redirect:/rooms/roomId=" + roomId);
 	}
 
-	@PostMapping("/rooms/{roomId}/removePhoto/{photoId}")
-	public GetRoomInfoDTO removePhoto(@PathVariable long roomId ,@PathVariable long photoId ,HttpServletRequest request) throws UnauthorizedException, ElementNotFoundException {
+	@PostMapping("/rooms/roomId={roomId}/removePhoto/photoId={photoId}")
+	public ModelAndView removePhoto(@PathVariable long roomId ,@PathVariable long photoId ,HttpServletRequest request) throws UnauthorizedException, ElementNotFoundException {
 		long id = UserService.authentication(request);
 		roomService.removePhoto(roomId, id, photoId);
-		return roomService.convertRoomToRoomInfoDTO(roomService.getRoomById(roomId));
+		return new ModelAndView("redirect:/rooms/roomId=" + roomId);
 	}
 
-	@GetMapping("/rooms/{roomId}/getInFavourites")
+	@GetMapping("/rooms/roomId={roomId}/getInFavourites")
 	public List<GetUserProfileDTO> getInFavourites(@PathVariable long roomId) throws UnauthorizedException, ElementNotFoundException{
 
 		List<GetUserProfileDTO> userDTO = new LinkedList<>();
@@ -105,7 +108,7 @@ public class RoomController {
 		return userDTO;
 	}
 
-	@GetMapping("/rooms/{roomId}/availability")
+	@GetMapping("/rooms/roomId={roomId}/availability")
 	public List<LocalDate> getRoomAvailability(@PathVariable long roomId)throws ElementNotFoundException {
 		return roomService.getRoomAvailability(roomId);
 	}

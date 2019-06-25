@@ -22,4 +22,6 @@ public class GetBookingInfoDTO {
 
     @NotEmpty
     private LocalDate endDate;
+
+    private GetListOfRoomDTO getListOfRoomDTO;
 }

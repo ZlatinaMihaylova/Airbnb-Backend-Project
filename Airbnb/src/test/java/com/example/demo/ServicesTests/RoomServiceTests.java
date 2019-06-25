@@ -79,7 +79,7 @@ public class RoomServiceTests {
     public void init() {
         user = new User(1L, "FirstName", "LastName", "goodPassword1234", "email@gmail.com", LocalDate.now(),"1234",null );
         room = new Room(1L, "Room",
-                "Address", 5, 2,3,4,5, "Details", new HashSet<>(), city,2L, new LinkedList<>());
+                "Address", 5, 2,3,4,5, "Details", new LinkedList<>(), city,2L, new LinkedList<>());
         photo = new Photo(1L, "url", room);
     }
 
@@ -109,8 +109,8 @@ public class RoomServiceTests {
 
     @Test
     public void addRoom() throws ElementNotFoundException {
-        AddRoomDTO newRoom = new AddRoomDTO("Room",
-                "Address", 5, 2,3,4,5, "Details", new HashSet<>(), "City");
+        AddRoomDTO newRoom = new AddRoomDTO("Room", "City",
+                "Address", 5, 2,3,4,5, "Details", new LinkedList<>());
         Mockito.when(cityRepository.findByName(newRoom.getCity())).thenReturn(Optional.of(city));
         Room result = roomService.addRoom(newRoom,room.getUserId());
 
@@ -303,7 +303,7 @@ public class RoomServiceTests {
         Mockito.when(reviewService.getRoomRating(room)).thenReturn(1.0);
         Mockito.when(reviewService.getRoomTimesRated(room)).thenReturn(1);
 
-        GetRoomInfoDTO expected = new GetRoomInfoDTO(photo.getUrl(),room.getName(),room.getAddress(),
+        GetRoomInfoDTO expected = new GetRoomInfoDTO(photo.getUrl(),room.getName(),room.getCity().getName(),room.getAddress(),
                 room.getGuests(),room.getBedrooms(),room.getBeds(),room.getBaths(),room.getPrice(),
                 room.getDetails(), photoRepository.findByRoomId(room.getId()).stream().map(photo -> photo.getUrl()).collect(Collectors.toList()),
                 room.getAmenities().stream().map(amenity -> amenity.getName()).collect(Collectors.toList()));

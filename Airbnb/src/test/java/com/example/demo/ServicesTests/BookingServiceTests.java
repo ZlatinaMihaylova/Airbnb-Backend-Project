@@ -1,9 +1,11 @@
 package com.example.demo.ServicesTests;
 
 import com.example.demo.dao.BookingRepository;
+import com.example.demo.dao.PhotoRepository;
 import com.example.demo.dao.RoomRepository;
 import com.example.demo.dto.AddBookingDTO;
 import com.example.demo.dto.GetBookingInfoDTO;
+import com.example.demo.dto.GetListOfRoomDTO;
 import com.example.demo.exceptions.BadRequestException;
 import com.example.demo.exceptions.BookingIsOverlapingException;
 import com.example.demo.exceptions.ElementNotFoundException;
@@ -37,6 +39,10 @@ public class BookingServiceTests {
     @InjectMocks
     private RoomService roomService;
 
+
+    @Mock
+    private ReviewService reviewServiceMock;
+
     @Mock
     private RoomService roomServiceMock;
 
@@ -47,6 +53,9 @@ public class BookingServiceTests {
     private BookingService bookingServiceMock;
     @Mock
     private RoomRepository roomRepository;
+
+    @Mock
+    private PhotoRepository photoRepository;
     @Mock
     private BookingRepository bookingRepository;
 
@@ -62,7 +71,7 @@ public class BookingServiceTests {
     public void init() {
         user = new User(1L, "FirstName", "LastName", "goodPassword1234", "email@gmail.com", LocalDate.now(),"1234",null );
         room = new Room(1L, "Room",
-                "Address", 5, 2,3,4,5, "Details", new HashSet<>(), new City(),2L, new LinkedList<>());
+                "Address", 5, 2,3,4,5, "Details", new LinkedList<>(), new City(),2L, new LinkedList<>());
         bookings = new LinkedList<>(Arrays.asList(
                 new Booking(1L, LocalDate.now().plusDays(4), LocalDate.now().plusDays(6), user, room ),
                 new Booking(2L, LocalDate.now().plusDays(6), LocalDate.now().plusDays(10), user, room ),
@@ -126,9 +135,14 @@ public class BookingServiceTests {
 
     @Test
     public void convertBookingToDTO()throws ElementNotFoundException, BookingIsOverlapingException, UnauthorizedException, BadRequestException {
+        Mockito.when(roomServiceMock.convertRoomToDTO(room)).thenReturn(new GetListOfRoomDTO("photo",room.getName(),room.getCity().getName(),
+                5.0, 50));
+        Mockito.when(reviewServiceMock.getRoomRating(room)).thenReturn(5.0);
+        Mockito.when(reviewServiceMock.getRoomTimesRated(room)).thenReturn(50);
+
         Booking booking = bookings.get(1);
-        GetBookingInfoDTO expected = new GetBookingInfoDTO(booking.getUser().viewAllNames(),LocalDate.now().plusDays(6), LocalDate.now().plusDays(10) );
-        GetBookingInfoDTO result = BookingService.convertBookingToDTO(booking);
+        GetBookingInfoDTO expected = new GetBookingInfoDTO(booking.getUser().viewAllNames(),LocalDate.now().plusDays(6), LocalDate.now().plusDays(10), roomService.convertRoomToDTO(room) );
+        GetBookingInfoDTO result = bookingService.convertBookingToDTO(booking);
 
         Assert.assertEquals(expected.getUserNames(), result.getUserNames());
         Assert.assertEquals(expected.getStartDate(), result.getStartDate());

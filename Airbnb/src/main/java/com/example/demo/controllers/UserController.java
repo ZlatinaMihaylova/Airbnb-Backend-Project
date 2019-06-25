@@ -27,6 +27,7 @@ import com.example.demo.exceptions.UnauthorizedException;
 import com.example.demo.model.User;
 import com.example.demo.service.RoomService;
 import com.example.demo.service.UserService;
+import org.springframework.web.servlet.ModelAndView;
 
 @RestController
 public class UserController {
@@ -50,7 +51,7 @@ public class UserController {
 	}
 
 	@PostMapping("/login")
-	public GetUserProfileDTO login(@RequestBody @Valid LoginDTO loginDTO, HttpServletRequest request) throws ElementNotFoundException, BadRequestException, NoSuchAlgorithmException, UnsupportedEncodingException {
+	public ModelAndView login(@RequestBody @Valid LoginDTO loginDTO, HttpServletRequest request) throws ElementNotFoundException, BadRequestException, NoSuchAlgorithmException, UnsupportedEncodingException {
 		HttpSession session = request.getSession();
 		if (session.getAttribute("userId") != null) {
 			throw new BadRequestException("User is already logged in!");
@@ -58,8 +59,7 @@ public class UserController {
 		User user = userService.login(loginDTO);
 		session = request.getSession();
 		session.setAttribute("userId", user.getId());
-
-		return userService.convertUserToDTO(userService.getUserById(user.getId()));
+		return new ModelAndView("redirect:/users/" + user.getId());
 	}
 
 	@PostMapping("/logout")
@@ -71,21 +71,22 @@ public class UserController {
 		session.invalidate();
 	}
 
-	@GetMapping("/users/{userId}")
+	@GetMapping("/users/userId={userId}")
 	public GetUserProfileDTO getUserDetails(@PathVariable long userId) throws ElementNotFoundException {
 		return userService.convertUserToDTO(userService.getUserById(userId));
 	}
 
 	@GetMapping("/profile")
-	public GetUserProfileDTO getLoggedUserProfile(HttpServletRequest request) throws UnauthorizedException, ElementNotFoundException {
-		long id = UserService.authentication(request);
-		return userService.convertUserToDTO(userService.getUserById(id));
+	public ModelAndView getLoggedUserProfile(HttpServletRequest request) throws UnauthorizedException, ElementNotFoundException {
+		long userId = UserService.authentication(request);
+		return new ModelAndView("redirect:/users/" + userId);
 	}
 
 	@PutMapping("/changeInformation")
-	public GetUserProfileDTO changeInformation(@RequestBody @Valid EditProfileDTO editProfileDTO, HttpServletRequest request) throws BadRequestException,UnauthorizedException, ElementNotFoundException, NoSuchAlgorithmException, UnsupportedEncodingException {
-		long id = UserService.authentication(request);
-		return userService.convertUserToDTO(userService.changeInformation(id, editProfileDTO));
+	public ModelAndView changeInformation(@RequestBody @Valid EditProfileDTO editProfileDTO, HttpServletRequest request) throws BadRequestException,UnauthorizedException, ElementNotFoundException, NoSuchAlgorithmException, UnsupportedEncodingException {
+		long userId = UserService.authentication(request);
+		userService.changeInformation(userId, editProfileDTO);
+		return new ModelAndView("redirect:/users/" + userId);
 	}
 
 
@@ -98,7 +99,7 @@ public class UserController {
 	@GetMapping("/myBookings")
 	public Set<GetBookingInfoDTO> showMyBookings(HttpServletRequest request) throws UnauthorizedException{
 		long id = UserService.authentication(request);
-		return bookingService.getAllUsersBookings(id).stream().map(booking -> BookingService.convertBookingToDTO(booking)).collect(Collectors.toSet());
+		return bookingService.getAllUsersBookings(id).stream().map(booking -> bookingService.convertBookingToDTO(booking)).collect(Collectors.toSet());
 	}
 
 }

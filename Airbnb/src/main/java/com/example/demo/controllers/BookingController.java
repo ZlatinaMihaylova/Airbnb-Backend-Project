@@ -11,6 +11,7 @@ import com.example.demo.service.BookingService;
 import com.example.demo.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
@@ -24,15 +25,15 @@ public class BookingController {
     @Autowired
     private BookingService bookingService;
 
-    @PostMapping("/rooms/{roomId}/bookings")
-    public List<Booking> makeReservation(@PathVariable long roomId, @RequestBody @Valid AddBookingDTO addBookingDTO, HttpServletRequest request) throws ElementNotFoundException, UnauthorizedException, BookingIsOverlapingException, BadRequestException {
+    @PostMapping("/rooms/roomId={roomId}/bookings")
+    public ModelAndView makeReservation(@PathVariable long roomId, @RequestBody @Valid AddBookingDTO addBookingDTO, HttpServletRequest request) throws ElementNotFoundException, UnauthorizedException, BookingIsOverlapingException, BadRequestException {
         long id = UserService.authentication(request);
         bookingService.makeReservation(roomId, addBookingDTO, id);
-        return bookingService.getAllUsersBookings(id);
+        return new ModelAndView("redirect:/myBookings");
     }
 
-    @GetMapping("/rooms/{roomId}/bookings")
+    @GetMapping("/rooms/roomId={roomId}/bookings")
     public Set<GetBookingInfoDTO> getAllBookingsForRoom(@PathVariable long roomId) throws ElementNotFoundException{
-        return bookingService.getAllBookingsForRoom(roomId).stream().map(booking -> BookingService.convertBookingToDTO(booking)).collect(Collectors.toSet());
+        return bookingService.getAllBookingsForRoom(roomId).stream().map(booking -> bookingService.convertBookingToDTO(booking)).collect(Collectors.toSet());
     }
 }

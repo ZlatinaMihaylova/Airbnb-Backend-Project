@@ -63,7 +63,7 @@ public class ReviewServiceTests {
         user = new User(1L, "FirstName", "LastName", "goodPassword1234", "email@gmail.com", LocalDate.now(),"1234",null );
         userWithRoom = new User(2L, "FirstName1", "LastName1", "goodPassword12341", "email@gmail.com", LocalDate.now(),"1234",null );
         room = new Room(1L, "Room",
-                "Address", 5, 2,3,4,5, "Details", new HashSet<>(), new City(),2L, new LinkedList<>());
+                "Address", 5, 2,3,4,5, "Details", new LinkedList<>(), new City(),2L, new LinkedList<>());
         reviews = new LinkedList<>(Arrays.asList(
                 new Review(1L, LocalDateTime.of(2017, Month.FEBRUARY,3,6,30,40,50000), "Text", user, room, 4),
                 new Review(1L, LocalDateTime.of(2017,Month.FEBRUARY,3,6,30,40,50000), "Text", user, room, 5),

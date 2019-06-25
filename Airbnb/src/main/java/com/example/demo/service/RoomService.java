@@ -58,7 +58,7 @@ public class RoomService {
 			c.setName(room.getCity());
 			cityRepository.save(c);
 		}
-		Set<Amenity> amenities = new HashSet<>();
+		List<Amenity> amenities = new LinkedList<>();
 		for (String amenity : room.getAmenities()){
 			if (!amenityRepository.findByName(amenity).isPresent()) {
 				amenity = amenity.substring(0,1).toUpperCase() + amenity.substring(1).toLowerCase();
@@ -88,7 +88,7 @@ public class RoomService {
 			u.getFavourites().remove(room);
 			userService.saveUserToDB(u);
 		}
-		Set<Amenity> amenities = room.getAmenities();
+		List<Amenity> amenities = room.getAmenities();
 		for ( Amenity amenity : amenities) {
 			amenity.getRooms().remove(room);
 			amenityRepository.saveAndFlush(amenity);
@@ -167,7 +167,7 @@ public class RoomService {
 				.collect(Collectors.toList());
 		List<String> photos = photoRepository.findByRoomId(room.getId()).stream()
 				.map(photo -> photo.getUrl()).collect(Collectors.toList());
-		return new GetRoomInfoDTO(getMainPhoto(room.getId()),room.getName(),room.getAddress(), room.getGuests(), room.getBedrooms(), room.getBeds(), room.getBaths(),
+		return new GetRoomInfoDTO(getMainPhoto(room.getId()),room.getName(),room.getCity().getName(),room.getAddress(), room.getGuests(), room.getBedrooms(), room.getBeds(), room.getBaths(),
 				room.getPrice(), room.getDetails(), photos, amenities);
 	}
 

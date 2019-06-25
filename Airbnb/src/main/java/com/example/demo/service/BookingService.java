@@ -65,8 +65,8 @@ public class BookingService {
         return bookingRepository.findByRoomId(roomId);
     }
 
-    public static GetBookingInfoDTO convertBookingToDTO(Booking booking) {
-        return new GetBookingInfoDTO(booking.getUser().viewAllNames(), booking.getStartDate(), booking.getEndDate());
+    public GetBookingInfoDTO convertBookingToDTO(Booking booking) {
+        return new GetBookingInfoDTO(booking.getUser().viewAllNames(), booking.getStartDate(), booking.getEndDate(), roomService.convertRoomToDTO(booking.getRoom()));
     }
 
     private void validateReservationDates(Booking reservation) throws BadRequestException {

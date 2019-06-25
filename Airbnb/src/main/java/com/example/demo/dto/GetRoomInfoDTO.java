@@ -16,6 +16,7 @@ import lombok.Setter;
 public class GetRoomInfoDTO {
 	private String mainPhoto;
 	private String name;
+	private String city;
 	private String address;
 	private int guests;
 	private int bedrooms;

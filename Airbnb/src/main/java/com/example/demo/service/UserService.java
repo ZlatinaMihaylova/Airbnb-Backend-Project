@@ -118,7 +118,6 @@ public class UserService {
 			throw new UnauthorizedException("You must login first");
 		}
 
-		long id = (long) session.getAttribute("userId");
-		return id;
+		return (long) session.getAttribute("userId");
 	}
 }
