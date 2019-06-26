@@ -21,6 +21,6 @@ public class AddReviewDTO {
 
 	@NotEmpty
 	private String text;
-	@Size(min = 3, max = 200,message = "Stars should be between 1 and 5")
+	@Size(min = 1, max = 5,message = "Stars should be between 1 and 5")
 	private int stars;
 }

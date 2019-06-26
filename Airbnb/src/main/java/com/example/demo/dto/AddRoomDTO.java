@@ -5,17 +5,17 @@ import java.util.Set;
 
 import com.example.demo.model.Amenity;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NonNull;
-import lombok.Setter;
+import lombok.*;
 
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Positive;
+import javax.validation.constraints.PositiveOrZero;
 
 @Getter
 @Setter
 @AllArgsConstructor
+@NoArgsConstructor
 public class AddRoomDTO {
 
 	@NotEmpty
@@ -27,19 +27,19 @@ public class AddRoomDTO {
 	@NotEmpty
 	private String address;
 
-	@NotNull
+	@Positive
 	private int guests;
 
-	@NotNull
+	@Positive
 	private int bedrooms;
 
-	@NotNull
+	@Positive
 	private int beds;
 
-	@NotNull
+	@Positive
 	private int baths;
 
-	@NotNull
+	@Positive
 	private int price;
 
 	@NotEmpty

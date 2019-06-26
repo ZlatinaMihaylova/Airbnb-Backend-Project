@@ -3,6 +3,7 @@ package com.example.demo.ControllersTests;
 import com.example.demo.dto.AddRoomDTO;
 import com.example.demo.dto.GetRoomInfoDTO;
 import com.example.demo.dto.GetListOfRoomDTO;
+import com.example.demo.dto.SearchRoomDTO;
 import com.example.demo.model.City;
 import com.example.demo.model.Room;
 import com.example.demo.model.User;
@@ -59,6 +60,10 @@ public class RoomControllerTests {
 
     private MockHttpSession session;
 
+    @Autowired
+    private ObjectMapper objectMapper;
+
+
     private Room room;
     private City city;
     private User user;
@@ -66,9 +71,9 @@ public class RoomControllerTests {
     @Before
     public void init() {
         city = new City(3L, "City");
+        user = new User(2L, "FirstName", "LastName", "goodPassword1234", "email@gmail.com", LocalDate.now(),"1234",null );
         room = new Room(1L, "Room",
                 "Address", 5, 2,3,4,5, "Details", new LinkedList<>(), city,2L, new LinkedList<>());
-        user = new User(1L, "FirstName", "LastName", "goodPassword1234", "email@gmail.com", LocalDate.now(),"1234",null );
 
         session = new MockHttpSession();
         session.setAttribute("userId", user.getId());
@@ -111,22 +116,134 @@ public class RoomControllerTests {
 
     @Test
     public void addRoomOK() throws Exception {
-        Mockito.when(roomService.convertRoomToRoomInfoDTO(room)).thenReturn(new GetRoomInfoDTO("photo",room.getName(),room.getCity().getName(),room.getAddress(), room.getGuests(), room.getBedrooms(), room.getBeds(), room.getBaths(),
-                room.getPrice(), room.getDetails(), new LinkedList<>(), new LinkedList<>()));;
+        Mockito.when(roomService.addRoom(Mockito.any(AddRoomDTO.class), Mockito.anyLong())).thenReturn(room);
 
         AddRoomDTO addRoomDTO = new AddRoomDTO("Room", "City",
                 "Address", 5, 2,3,4,5, "Details", new LinkedList<>());
-        Mockito.when(roomService.addRoom(addRoomDTO, user.getId())).thenReturn(room);
 
-        MvcResult result = mvc.perform( MockMvcRequestBuilders
-                .post("/rooms/create").session(session)
+        mvc.perform(MockMvcRequestBuilders.post("/rooms/create").session(session)
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(new ObjectMapper().writeValueAsString(addRoomDTO)))
-                .andDo(MockMvcResultHandlers.print())
-                .andExpect(status().isOk()).andReturn();
-
-        System.out.println(result.getResponse().getContentAsString());
-        System.out.println(roomService.convertRoomToRoomInfoDTO(roomService.addRoom(addRoomDTO,user.getId())));
+                .content(objectMapper.writeValueAsString(addRoomDTO)))
+                .andExpect(status().isFound())
+                .andExpect(redirectedUrl("/rooms/roomId=" + room.getId()));
     }
+
+    @Test
+    public void addRoomShouldReturnBadRequestEmptyName() throws Exception {
+        Mockito.when(roomService.addRoom(Mockito.any(AddRoomDTO.class), Mockito.anyLong())).thenReturn(room);
+
+        AddRoomDTO addRoomDTO = new AddRoomDTO("", "City",
+                "Address", 5, 2,3,4,5, "Details", new LinkedList<>());
+
+
+        mvc.perform(MockMvcRequestBuilders.post("/rooms/create").session(session)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(addRoomDTO)))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    public void addRoomShouldReturnBadRequestGuestsNotPositive() throws Exception {
+        Mockito.when(roomService.addRoom(Mockito.any(AddRoomDTO.class), Mockito.anyLong())).thenReturn(room);
+
+        AddRoomDTO addRoomDTO = new AddRoomDTO("Name", "City",
+                "Address", 0, 1,3,4,5, "Details", new LinkedList<>());
+
+        mvc.perform(MockMvcRequestBuilders.post("/rooms/create").session(session)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(addRoomDTO)))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    public void removeRoomStatusOK() throws Exception {
+        mvc.perform(MockMvcRequestBuilders.delete("/rooms/roomId={roomId}/delete", room.getId()).session(session)
+                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isFound())
+                .andExpect(redirectedUrl("/userId=" + user.getId() + "/rooms"));
+    }
+
+    @Test
+    public void getUserRooms() throws Exception {
+        Mockito.when(roomService.getUserRooms(user.getId())).thenReturn(new LinkedList<>(Arrays.asList(room)));
+        Mockito.when(roomService.convertRoomToDTO(room)).thenReturn(new GetListOfRoomDTO("1", room.getName(), city.getName(), 3.4, 3));
+
+        mvc.perform(MockMvcRequestBuilders.get("/userId={userId}/rooms", user.getId())
+                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", Matchers.hasSize(1))); ;
+
+    }
+
+    @Test
+    public void getRoomsByCityName() throws Exception {
+        Mockito.when(roomService.getRoomsByCityName("CityName")).thenReturn(new LinkedList<>(Arrays.asList(room)));
+        Mockito.when(roomService.convertRoomToDTO(room)).thenReturn(new GetListOfRoomDTO("1", room.getName(), city.getName(), 3.4, 3));
+
+        mvc.perform(MockMvcRequestBuilders.get("/rooms/cityName={cityName}", "CityName")
+                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", Matchers.hasSize(1))); ;
+
+    }
+
+   /* @Test
+    public void getRoomsByCityNameBadRequestEmptyCityName() throws Exception {
+        Mockito.when(roomService.getRoomsByCityName("CityName")).thenReturn(new LinkedList<>(Arrays.asList(room)));
+        Mockito.when(roomService.convertRoomToDTO(room)).thenReturn(new GetListOfRoomDTO("1", room.getName(), city.getName(), 3.4, 3));
+
+        mvc.perform(MockMvcRequestBuilders.get("/rooms/cityName={cityName}", "")
+                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isBadRequest());
+
+    }*/
+
+    @Test
+    public void getRoomsBySearchDTOShouldReturnOk() throws Exception {
+        Mockito.when(roomService.getRoomsBySearchDTO(Mockito.any(SearchRoomDTO.class))).thenReturn(new LinkedList<>(Arrays.asList(room)));
+        Mockito.when(roomService.convertRoomToDTO(room)).thenReturn(new GetListOfRoomDTO("1", room.getName(), city.getName(), 3.4, 3));
+
+        mvc.perform(MockMvcRequestBuilders.get("/rooms/search")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(new SearchRoomDTO(city.getName(), LocalDate.now().plusDays(1), LocalDate.now().plusDays(2), 2))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", Matchers.hasSize(1))); ;
+
+    }
+
+    @Test
+    public void getRoomsBySearchDTOShouldReturnBadRequestEmptyCityName() throws Exception {
+        Mockito.when(roomService.getRoomsBySearchDTO(Mockito.any(SearchRoomDTO.class))).thenReturn(new LinkedList<>(Arrays.asList(room)));
+        Mockito.when(roomService.convertRoomToDTO(room)).thenReturn(new GetListOfRoomDTO("1", room.getName(), city.getName(), 3.4, 3));
+
+        mvc.perform(MockMvcRequestBuilders.get("/rooms/search")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(new SearchRoomDTO("", LocalDate.now(), LocalDate.now(), 2))))
+                .andExpect(status().isBadRequest());
+
+    }
+
+    @Test
+    public void getRoomsBySearchDTOReturnBadRequestPastDates() throws Exception {
+        Mockito.when(roomService.getRoomsBySearchDTO(Mockito.any(SearchRoomDTO.class))).thenReturn(new LinkedList<>(Arrays.asList(room)));
+        Mockito.when(roomService.convertRoomToDTO(room)).thenReturn(new GetListOfRoomDTO("1", room.getName(), city.getName(), 3.4, 3));
+
+        mvc.perform(MockMvcRequestBuilders.get("/rooms/search")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(new SearchRoomDTO(city.getName(), LocalDate.now().minusDays(10), LocalDate.now().minusDays(1), 2))))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    public void getRoomsBySearchDTOReturnBadRequestZeroGuests() throws Exception {
+        Mockito.when(roomService.getRoomsBySearchDTO(Mockito.any(SearchRoomDTO.class))).thenReturn(new LinkedList<>(Arrays.asList(room)));
+        Mockito.when(roomService.convertRoomToDTO(room)).thenReturn(new GetListOfRoomDTO("1", room.getName(), city.getName(), 3.4, 3));
+
+        mvc.perform(MockMvcRequestBuilders.get("/rooms/search")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(new SearchRoomDTO(city.getName(), LocalDate.now().minusDays(10), LocalDate.now().minusDays(1), 0))))
+                .andExpect(status().isBadRequest());
+    }
+
 
 }

@@ -55,7 +55,8 @@ public class RoomService {
 	public Room addRoom(AddRoomDTO room, Long userId) throws ElementNotFoundException {
 		if (!cityRepository.findByName(room.getCity()).isPresent()) {
 			City c = new City();
-			c.setName(room.getCity());
+			String cityName =  room.getCity().substring(0,1).toUpperCase() + room.getCity().substring(1).toLowerCase();
+			c.setName(cityName);
 			cityRepository.save(c);
 		}
 		List<Amenity> amenities = new LinkedList<>();
@@ -93,7 +94,7 @@ public class RoomService {
 			amenity.getRooms().remove(room);
 			amenityRepository.saveAndFlush(amenity);
 		}
-		roomRepository.delete(roomRepository.findById(roomId).orElseThrow(() -> new ElementNotFoundException("Room not found!")));
+		roomRepository.delete(room);
 	}
 
 	public List<Room> getUserRooms(long userId) {

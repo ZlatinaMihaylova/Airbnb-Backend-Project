@@ -59,7 +59,7 @@ public class UserController {
 		User user = userService.login(loginDTO);
 		session = request.getSession();
 		session.setAttribute("userId", user.getId());
-		return new ModelAndView("redirect:/users/" + user.getId());
+		return new ModelAndView("redirect:/users/userId=" + user.getId());
 	}
 
 	@PostMapping("/logout")
@@ -79,14 +79,14 @@ public class UserController {
 	@GetMapping("/profile")
 	public ModelAndView getLoggedUserProfile(HttpServletRequest request) throws UnauthorizedException, ElementNotFoundException {
 		long userId = UserService.authentication(request);
-		return new ModelAndView("redirect:/users/" + userId);
+		return new ModelAndView("redirect:/users/userId=" + userId);
 	}
 
 	@PutMapping("/changeInformation")
 	public ModelAndView changeInformation(@RequestBody @Valid EditProfileDTO editProfileDTO, HttpServletRequest request) throws BadRequestException,UnauthorizedException, ElementNotFoundException, NoSuchAlgorithmException, UnsupportedEncodingException {
 		long userId = UserService.authentication(request);
 		userService.changeInformation(userId, editProfileDTO);
-		return new ModelAndView("redirect:/users/" + userId);
+		return new ModelAndView("redirect:/users/userId=" + userId);
 	}
 
 
