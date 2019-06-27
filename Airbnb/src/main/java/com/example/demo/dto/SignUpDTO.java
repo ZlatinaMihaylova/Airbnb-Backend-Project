@@ -3,6 +3,7 @@ package com.example.demo.dto;
 import lombok.*;
 
 import javax.validation.constraints.NotEmpty;
+import javax.validation.constraints.Past;
 import java.time.LocalDate;
 
 @Getter
@@ -15,18 +16,18 @@ public class SignUpDTO {
     @NotEmpty
     private String firstName;
 
-    @NonNull
+    @NotEmpty
     private String lastName;
 
-    @NonNull
+    @NotEmpty
     private String password;
 
-    @NonNull
+    @NotEmpty
     private String email;
 
-    @NonNull
+    @Past
     private LocalDate birthDate;
 
-    @NonNull
+    @NotEmpty
     private String phone;
 }

@@ -72,8 +72,8 @@ public class RoomController {
 
 	@GetMapping("/rooms/roomId={roomId}/addInFavourites")
 	public ModelAndView addRoomInFavourites(@PathVariable long roomId, HttpServletRequest request, HttpServletResponse response) throws ElementNotFoundException, UnauthorizedException {
-		long id = UserService.authentication(request);
-		roomService.addRoomInFavourites(id, roomId);
+		long userId = UserService.authentication(request);
+		roomService.addRoomInFavourites(userId, roomId);
 		return new ModelAndView("redirect:/viewFavourites");
 	}
 
@@ -89,21 +89,20 @@ public class RoomController {
 
 	@PostMapping("/rooms/roomId={roomId}/addPhoto")
 	public ModelAndView addPhoto(@RequestBody @Valid AddPhotoDTO photo, @PathVariable long roomId , HttpServletRequest request) throws UnauthorizedException, ElementNotFoundException {
-		long id = UserService.authentication(request);
-		roomService.addPhoto(roomId, id, photo);
+		long userId = UserService.authentication(request);
+		roomService.addPhoto(roomId, userId, photo);
 		return new ModelAndView("redirect:/rooms/roomId=" + roomId);
 	}
 
-	@PostMapping("/rooms/roomId={roomId}/removePhoto/photoId={photoId}")
+	@DeleteMapping("/rooms/roomId={roomId}/removePhoto/photoId={photoId}")
 	public ModelAndView removePhoto(@PathVariable long roomId ,@PathVariable long photoId ,HttpServletRequest request) throws UnauthorizedException, ElementNotFoundException {
-		long id = UserService.authentication(request);
-		roomService.removePhoto(roomId, id, photoId);
+		long userId = UserService.authentication(request);
+		roomService.removePhoto(roomId, userId, photoId);
 		return new ModelAndView("redirect:/rooms/roomId=" + roomId);
 	}
 
 	@GetMapping("/rooms/roomId={roomId}/getInFavourites")
-	public List<GetUserProfileDTO> getInFavourites(@PathVariable long roomId) throws UnauthorizedException, ElementNotFoundException{
-
+	public List<GetUserProfileDTO> getInFavourites(@PathVariable long roomId) throws ElementNotFoundException{
 		List<GetUserProfileDTO> userDTO = new LinkedList<>();
 		for ( User user : roomService.viewInFavouritesUser(roomId)) {
 			userDTO.add(userService.convertUserToDTO(user));

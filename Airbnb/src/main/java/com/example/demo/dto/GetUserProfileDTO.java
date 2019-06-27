@@ -11,7 +11,7 @@ import lombok.*;
 @EqualsAndHashCode(of={"name","phone","rooms","reviews"})
 public class GetUserProfileDTO {
 
-	private String name;
+	private String names;
 	private String phone;
 	private List<GetListOfRoomDTO> rooms;
 	private List<GetReviewsForRoomDTO> reviews;

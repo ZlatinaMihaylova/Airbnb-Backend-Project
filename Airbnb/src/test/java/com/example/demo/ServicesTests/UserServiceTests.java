@@ -23,6 +23,7 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpSession;
 import org.springframework.test.context.TestPropertySource;
 
@@ -101,40 +102,40 @@ public class UserServiceTests {
     }
 
     @Test(expected = SignUpException.class)
-    public void testInvalidPassword() throws SignUpException, NoSuchAlgorithmException, UnsupportedEncodingException {
-        userService.signUp(new SignUpDTO("FirstName", "LastName", "1234", "email@gmail.com", LocalDate.now(),"1234"));
+    public void testInvalidPassword() throws BadRequestException, SignUpException, NoSuchAlgorithmException, UnsupportedEncodingException {
+        userService.signUp(new SignUpDTO("FirstName", "LastName", "1234", "email@gmail.com", LocalDate.now(),"1234"), new MockHttpSession());
     }
 
     @Test(expected = SignUpException.class)
-    public void testInvalidEmail() throws SignUpException, NoSuchAlgorithmException, UnsupportedEncodingException {
-        userService.signUp(new SignUpDTO("FirstName", "LastName", "goodPassword1234", "email", LocalDate.now(),"1234" ));
+    public void testInvalidEmail() throws BadRequestException, SignUpException, NoSuchAlgorithmException, UnsupportedEncodingException {
+        userService.signUp(new SignUpDTO("FirstName", "LastName", "goodPassword1234", "email", LocalDate.now(),"1234" ),new MockHttpSession());
     }
 
     @Test(expected = SignUpException.class)
-    public void testAlreadyUsedEmail() throws SignUpException, NoSuchAlgorithmException, UnsupportedEncodingException {
+    public void testAlreadyUsedEmail() throws BadRequestException, SignUpException, NoSuchAlgorithmException, UnsupportedEncodingException {
         Mockito.when(userRepository.findByEmail(user.getEmail())).thenReturn(Optional.of(user));
-        userService.signUp(new SignUpDTO("FirstName", "LastName", "goodPassword1234", "email", LocalDate.now(),"1234"));
+        userService.signUp(new SignUpDTO("FirstName", "LastName", "goodPassword1234", "email", LocalDate.now(),"1234"),new MockHttpSession());
     }
 
     @Test
-    public void testSignUpOK() throws SignUpException, NoSuchAlgorithmException, UnsupportedEncodingException  {
+    public void testSignUpOK() throws BadRequestException, SignUpException, NoSuchAlgorithmException, UnsupportedEncodingException  {
 
-        userService.signUp(new SignUpDTO( "FirstName", "LastName", "goodPassword1234", "email@gmail.com", LocalDate.now(),"1234"));
+        userService.signUp(new SignUpDTO( "FirstName", "LastName", "goodPassword1234", "email@gmail.com", LocalDate.now(),"1234"),new MockHttpSession());
         Mockito.verify(userRepository).saveAndFlush(user);
     }
 
     @Test(expected = ElementNotFoundException.class)
-    public void loginUserNotFound() throws ElementNotFoundException, NoSuchAlgorithmException, UnsupportedEncodingException {
+    public void loginUserNotFound() throws BadRequestException, ElementNotFoundException, NoSuchAlgorithmException, UnsupportedEncodingException {
         Mockito.when(userRepository.findByEmail(user.getEmail())).thenReturn(Optional.empty());
-        userService.login(new LoginDTO("email@abv.bg", "12345" ));
+        userService.login(new LoginDTO("email@abv.bg", "12345" ),new MockHttpSession());
     }
 
     @Test
-    public void loginSuccessful() throws ElementNotFoundException, NoSuchAlgorithmException, UnsupportedEncodingException, NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+    public void loginSuccessful() throws BadRequestException, ElementNotFoundException, NoSuchAlgorithmException, UnsupportedEncodingException, NoSuchMethodException, InvocationTargetException, IllegalAccessException {
         Method method = userService.getClass().getDeclaredMethod("encryptPassword", String.class);
         method.setAccessible(true);
         Mockito.when(userRepository.findByEmailAndPassword(user.getEmail(),method.invoke(userService,user.getPassword()).toString())).thenReturn(Optional.of(user));
-        Assert.assertEquals(user,userService.login(new LoginDTO(user.getEmail(),user.getPassword())));
+        Assert.assertEquals(user,userService.login(new LoginDTO(user.getEmail(),user.getPassword()),new MockHttpSession()));
     }
 
     @Test(expected = BadRequestException.class)

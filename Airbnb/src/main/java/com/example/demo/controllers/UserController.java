@@ -43,32 +43,18 @@ public class UserController {
 
 	@PostMapping("/users")
 	public void signUp(@RequestBody @Valid SignUpDTO signUpDTO, HttpServletRequest request) throws SignUpException, BadRequestException, NoSuchAlgorithmException, UnsupportedEncodingException{
-		HttpSession session = request.getSession();
-		if (session.getAttribute("userId") != null) {
-			throw new BadRequestException("User is already logged in");
-		}
-		userService.signUp(signUpDTO);
+		userService.signUp(signUpDTO,request.getSession());
 	}
 
 	@PostMapping("/login")
 	public ModelAndView login(@RequestBody @Valid LoginDTO loginDTO, HttpServletRequest request) throws ElementNotFoundException, BadRequestException, NoSuchAlgorithmException, UnsupportedEncodingException {
-		HttpSession session = request.getSession();
-		if (session.getAttribute("userId") != null) {
-			throw new BadRequestException("User is already logged in!");
-		}
-		User user = userService.login(loginDTO);
-		session = request.getSession();
-		session.setAttribute("userId", user.getId());
+		User user = userService.login(loginDTO, request.getSession());
 		return new ModelAndView("redirect:/users/userId=" + user.getId());
 	}
 
 	@PostMapping("/logout")
 	public void logout(HttpServletRequest request) throws BadRequestException {
-		HttpSession session = request.getSession();
-		if (session.getAttribute("userId") == null) {
-			throw new BadRequestException("You must login first");
-		}
-		session.invalidate();
+		userService.logout(request.getSession());
 	}
 
 	@GetMapping("/users/userId={userId}")

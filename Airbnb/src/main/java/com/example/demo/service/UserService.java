@@ -12,6 +12,7 @@ import com.example.demo.exceptions.BadRequestException;
 import com.example.demo.exceptions.ElementNotFoundException;
 import com.example.demo.exceptions.UnauthorizedException;
 import com.example.demo.model.Room;
+import org.hibernate.Session;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -56,7 +57,10 @@ public class UserService {
 				reviewService.getAllReviewsForUser(user.getId()).stream().map(review -> reviewService.convertReviewToDTO(review)).collect(Collectors.toList()));
 	}
 
-	public void signUp(SignUpDTO signUpDTO) throws SignUpException, NoSuchAlgorithmException, UnsupportedEncodingException {
+	public void signUp(SignUpDTO signUpDTO, HttpSession session) throws BadRequestException, SignUpException, NoSuchAlgorithmException, UnsupportedEncodingException {
+		if (session.getAttribute("userId") != null) {
+			throw new BadRequestException("User is already logged in");
+		}
 		if ( !this.isPasswordValid(signUpDTO.getPassword()) || !this.isValidEmailAddress(signUpDTO.getEmail())) {
 			throw new SignUpException("Invalid email or password");
 		}
@@ -68,9 +72,21 @@ public class UserService {
 		saveUserToDB(user);
 	}
 
-	public User login(LoginDTO loginDTO) throws ElementNotFoundException, NoSuchAlgorithmException, UnsupportedEncodingException {
+	public User login(LoginDTO loginDTO, HttpSession session) throws BadRequestException, ElementNotFoundException, NoSuchAlgorithmException, UnsupportedEncodingException {
+		if (session.getAttribute("userId") != null) {
+			throw new BadRequestException("User is already logged in!");
+		}
 		String encryptedPassword = UserService.encryptPassword(loginDTO.getPassword());
-		return userRepository.findByEmailAndPassword(loginDTO.getEmail(), encryptedPassword).orElseThrow(() -> new ElementNotFoundException("User not found"));
+		User user = userRepository.findByEmailAndPassword(loginDTO.getEmail(), encryptedPassword).orElseThrow(() -> new ElementNotFoundException("User not found"));
+		session.setAttribute("userId", user.getId());
+		return user;
+	}
+
+	public void logout(HttpSession session) throws BadRequestException {
+		if (session.getAttribute("userId") == null) {
+			throw new BadRequestException("You must login first");
+		}
+		session.invalidate();
 	}
 
 	public User changeInformation(long userId, EditProfileDTO editProfileDTO) throws NoSuchAlgorithmException, UnsupportedEncodingException, BadRequestException {
