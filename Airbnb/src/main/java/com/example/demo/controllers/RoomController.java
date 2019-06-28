@@ -9,6 +9,7 @@ import com.example.demo.model.User;
 import com.example.demo.service.BookingService;
 import com.example.demo.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -20,14 +21,14 @@ import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
-import javax.validation.constraints.NotEmpty;
-import javax.validation.constraints.Size;
+import javax.validation.constraints.*;
 import javax.validation.executable.ValidateOnExecution;
 
 import com.example.demo.service.RoomService;
 import org.springframework.web.servlet.ModelAndView;;
 
 @RestController
+@Validated
 public class RoomController {
 
 	@Autowired
@@ -77,14 +78,15 @@ public class RoomController {
 		return new ModelAndView("redirect:/viewFavourites");
 	}
 
-	@GetMapping("/rooms/cityName={cityName}")
-	public List<GetListOfRoomDTO> getRoomsByCityName(@PathVariable @NotEmpty @Size(min = 1) @Valid String cityName) throws ElementNotFoundException {
-		return roomService.getRoomsByCityName(cityName).stream().map(room -> roomService.convertRoomToDTO(room)).collect(Collectors.toList());
-	}
-
 	@GetMapping("/rooms/search")
-	public List<GetListOfRoomDTO> getRoomsBySearchDTO(@RequestBody @Valid SearchRoomDTO searchRoomDTO) throws ElementNotFoundException {
-		return roomService.getRoomsBySearchDTO(searchRoomDTO).stream().map(room -> roomService.convertRoomToDTO(room)).collect(Collectors.toList());
+	public List<GetListOfRoomDTO> getRoomsByCityDatesGuests(@RequestParam("city") @NotEmpty @Validated String city,
+															@RequestParam(name = "checkin") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) @FutureOrPresent @Valid LocalDate checkInDate,
+															@RequestParam(name = "checkout") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) @Future @Valid  LocalDate checkOutDate,
+															@RequestParam(name = "guests", defaultValue = "0") @PositiveOrZero @Valid int guests) throws ElementNotFoundException {
+		return roomService.getRoomsByCityDatesGuests(city, checkInDate, checkOutDate, guests)
+				.stream()
+				.map(room -> roomService.convertRoomToDTO(room))
+				.collect(Collectors.toList());
 	}
 
 	@PostMapping("/rooms/roomId={roomId}/addPhoto")

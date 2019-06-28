@@ -2,10 +2,7 @@ package com.example.demo.ServicesTests;
 
 import com.example.demo.dao.MessageRepository;
 import com.example.demo.dao.UserRepository;
-import com.example.demo.dto.ChatListDTO;
-import com.example.demo.dto.ChatWithUserDTO;
-import com.example.demo.dto.EditProfileDTO;
-import com.example.demo.dto.SearchRoomDTO;
+import com.example.demo.dto.*;
 import com.example.demo.exceptions.ElementNotFoundException;
 import com.example.demo.exceptions.UnauthorizedException;
 import com.example.demo.model.Message;
@@ -89,7 +86,7 @@ public class MessageServiceTests {
     }
 
     @Test
-    public void getMessagesWithUserById() throws ElementNotFoundException {
+    public void getMessagesWithUserById() throws UnauthorizedException, ElementNotFoundException {
         Mockito.when(messageRepository.findAll()).thenReturn(messages);
         Mockito.when(userServiceMock.getUserById(user1.getId())).thenReturn(user1);
         List<ChatWithUserDTO> expected = new LinkedList<>();
@@ -104,12 +101,12 @@ public class MessageServiceTests {
     }
 
     @Test
-    public void sendMessage() throws ElementNotFoundException {
+    public void sendMessage() throws UnauthorizedException, ElementNotFoundException {
         Mockito.when(userServiceMock.getUserById(user1.getId())).thenReturn(user1);
         Mockito.when(userServiceMock.getUserById(user2.getId())).thenReturn(user2);
         Message message = new Message(1L, user1.getId(), user2.getId(), "Text", LocalDateTime.of(2017, 2, 13, 15, 56));
 
-        messageService.sendMessage(user1.getId(), user2.getId(), "Text");
+        messageService.sendMessage(user1.getId(), user2.getId(), new SendMessageDTO("Text"));
 
         ArgumentCaptor<Message> argument = ArgumentCaptor.forClass(Message.class);
         Mockito.verify(messageRepository).saveAndFlush(argument.capture());

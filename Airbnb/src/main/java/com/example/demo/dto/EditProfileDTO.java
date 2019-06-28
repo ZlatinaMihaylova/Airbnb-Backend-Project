@@ -9,10 +9,12 @@ import lombok.NonNull;
 import lombok.Setter;
 
 import javax.validation.constraints.NotEmpty;
+import javax.validation.constraints.Past;
 
 @Getter
 @Setter
 @AllArgsConstructor
+@NoArgsConstructor
 public class EditProfileDTO {
 
 	@NotEmpty
@@ -27,7 +29,7 @@ public class EditProfileDTO {
 	@NotEmpty
 	private String email;
 
-	@NotEmpty
+	@Past
 	private LocalDate birthDate;
 
 	@NotEmpty

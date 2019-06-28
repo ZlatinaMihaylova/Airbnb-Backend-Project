@@ -27,8 +27,8 @@ public class BookingController {
 
     @PostMapping("/rooms/roomId={roomId}/bookings")
     public ModelAndView makeReservation(@PathVariable long roomId, @RequestBody @Valid AddBookingDTO addBookingDTO, HttpServletRequest request) throws ElementNotFoundException, UnauthorizedException, BookingIsOverlapingException, BadRequestException {
-        long id = UserService.authentication(request);
-        bookingService.makeReservation(roomId, addBookingDTO, id);
+        long userId = UserService.authentication(request);
+        bookingService.makeReservation(roomId, addBookingDTO, userId);
         return new ModelAndView("redirect:/myBookings");
     }
 

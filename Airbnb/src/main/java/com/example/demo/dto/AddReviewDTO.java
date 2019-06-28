@@ -10,6 +10,8 @@ import lombok.NoArgsConstructor;
 import lombok.NonNull;
 import lombok.Setter;
 
+import javax.validation.constraints.Max;
+import javax.validation.constraints.Min;
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.Size;
 
@@ -21,6 +23,8 @@ public class AddReviewDTO {
 
 	@NotEmpty
 	private String text;
-	@Size(min = 1, max = 5,message = "Stars should be between 1 and 5")
+
+	@Min(1)
+	@Max(5)
 	private int stars;
 }

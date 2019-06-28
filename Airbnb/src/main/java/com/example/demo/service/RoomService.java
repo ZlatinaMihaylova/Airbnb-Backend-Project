@@ -113,16 +113,12 @@ public class RoomService {
 		userService.saveUserToDB(user);
 	}
 
-	public List<Room> getRoomsByCityName(String cityName) {
-		return roomRepository.findByCityName(cityName);
-	}
-
-	public List<Room> getRoomsBySearchDTO(SearchRoomDTO searchRoomDTO) {
+	public List<Room> getRoomsByCityDatesGuests(String city, LocalDate checkin, LocalDate checkout, int guests) {
 		return roomRepository
-				.findByCityName(searchRoomDTO.getCity())
+				.findByCityName(city)
 				.stream()
-				.filter(room -> isRoomFree(room, searchRoomDTO.getStartDate(), searchRoomDTO.getEndDate()))
-				.filter(room -> room.getGuests() >= searchRoomDTO.getGuests())
+				.filter(room -> room.getGuests() >= guests)
+				.filter(room -> isRoomFree(room, checkin, checkout))
 				.collect(Collectors.toList());
 	}
 

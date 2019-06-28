@@ -8,6 +8,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import javax.validation.constraints.Future;
+import javax.validation.constraints.FutureOrPresent;
 import javax.validation.constraints.NotEmpty;
 
 @Getter
@@ -16,7 +17,7 @@ import javax.validation.constraints.NotEmpty;
 @NoArgsConstructor
 public class AddBookingDTO {
 
-	@Future
+	@FutureOrPresent
 	private LocalDate startDate;
 
 	@Future

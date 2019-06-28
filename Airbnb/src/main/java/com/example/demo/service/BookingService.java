@@ -3,6 +3,7 @@ package com.example.demo.service;
 import com.example.demo.dao.BookingRepository;
 import com.example.demo.dto.AddBookingDTO;
 import com.example.demo.dto.GetBookingInfoDTO;
+import com.example.demo.dto.SendMessageDTO;
 import com.example.demo.exceptions.BadRequestException;
 import com.example.demo.exceptions.BookingIsOverlapingException;
 import com.example.demo.exceptions.ElementNotFoundException;
@@ -46,12 +47,12 @@ public class BookingService {
         bookingRepository.saveAndFlush(result);
     }
 
-    public void removeAllBookingsFromRoom(long roomId,long userId) throws ElementNotFoundException {
+    public void removeAllBookingsFromRoom(long roomId,long userId) throws UnauthorizedException, ElementNotFoundException {
         List<Booking> bookings = bookingRepository.findByRoomId(roomId);
         for ( Booking booking : bookings) {
             if ( booking.getStartDate().isAfter(LocalDate.now())) {
                 messageService.sendMessage(userId, booking.getUser().getId(),
-                        "Your booking for " + booking.getRoom().getDetails() + " has been canceled. The room has been deleted");
+                        new SendMessageDTO("Your booking for " + booking.getRoom().getDetails() + " has been canceled. The room has been deleted"));
             }
         }
         bookingRepository.deleteAll(bookings);

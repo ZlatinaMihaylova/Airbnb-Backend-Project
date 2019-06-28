@@ -175,17 +175,11 @@ public class RoomServiceTests {
     }
 
     @Test
-    public void getRoomByCityNameTest() {
-        Mockito.when(roomRepository.findByCityName(room.getCity().getName())).thenReturn( new LinkedList<>(Arrays.asList(room)));
-        Assert.assertEquals(new LinkedList<>(Arrays.asList(room)), roomService.getRoomsByCityName(room.getCity().getName()));
-    }
-
-    @Test
     public void getRoomsBySearchDTO() throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
         Mockito.when(bookingService.getAllBookingsForRoom(room.getId())).thenReturn(new LinkedList<>());
-        SearchRoomDTO searchRoomDTO = new SearchRoomDTO(room.getCity().getName(),LocalDate.now(),LocalDate.now(), 2);
         Mockito.when(roomRepository.findByCityName(room.getCity().getName())).thenReturn( new LinkedList<>(Arrays.asList(room)));
-        Assert.assertEquals(new LinkedList<>(Arrays.asList(room)), roomService.getRoomsBySearchDTO(searchRoomDTO));
+        Assert.assertEquals(new LinkedList<>(Arrays.asList(room)),
+                roomService.getRoomsByCityDatesGuests(room.getCity().getName(), LocalDate.now(),LocalDate.now(), 2));
     }
 
     @Test

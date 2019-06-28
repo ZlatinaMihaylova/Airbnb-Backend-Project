@@ -30,29 +30,22 @@ public class MessageController {
 	@Autowired
 	private MessageService messageService;
 
-
 	@GetMapping("/messages")
 	public List<ChatListDTO> getAllMessages(HttpServletRequest request) throws UnauthorizedException, ElementNotFoundException {
-		long id = UserService.authentication(request);
-		return messageService.getAllMessagesForMessagePage(id);
+		long userId = UserService.authentication(request);
+		return messageService.getAllMessagesForMessagePage(userId);
 	}
 
 	@GetMapping("/messages/userId={userId}")
 	public List<ChatWithUserDTO> getMessagesWithUserById(@PathVariable long userId,HttpServletRequest request) throws UnauthorizedException, ElementNotFoundException{
 		long id = UserService.authentication(request);
-		if ( id == userId) {
-			throw new UnauthorizedException("User can not have messages with himself!");
-		}
 		return messageService.getMessagesWithUserById(id, userId);
 	}
 
 	@PostMapping("/messages/userId={receiverId}")
 	public ModelAndView sendMessage(@PathVariable long receiverId, @RequestBody @Valid SendMessageDTO sendMessageDTO, HttpServletRequest request) throws UnauthorizedException, ElementNotFoundException {
 		long userId = UserService.authentication(request);
-		if ( userId == receiverId) {
-			throw new UnauthorizedException("User can not send message to himself!");
-		}
-		messageService.sendMessage(userId, receiverId, sendMessageDTO.getText());
+		messageService.sendMessage(userId, receiverId, sendMessageDTO);
 		return new ModelAndView("redirect:/messages/" + receiverId);
 	}
 }

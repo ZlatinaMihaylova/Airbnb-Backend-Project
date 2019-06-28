@@ -4,7 +4,9 @@ import java.time.LocalDateTime;
 import java.util.*;
 import java.util.Map.Entry;
 
+import com.example.demo.dto.SendMessageDTO;
 import com.example.demo.exceptions.ElementNotFoundException;
+import com.example.demo.exceptions.UnauthorizedException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -58,7 +60,10 @@ public class MessageService {
 		return messagesList;
 	}
 
-	public List<ChatWithUserDTO> getMessagesWithUserById(long userId, long otherUserId) throws ElementNotFoundException{
+	public List<ChatWithUserDTO> getMessagesWithUserById(long userId, long otherUserId) throws UnauthorizedException, ElementNotFoundException{
+		if ( userId == otherUserId) {
+			throw new UnauthorizedException("User don't have messages with himself!");
+		}
 		List<ChatWithUserDTO> chat = new LinkedList<>();
 		Set<Message> messages = new TreeSet<Message>((m1,m2) -> m1.getDateTime().compareTo(m2.getDateTime()));
 		messages = this.getUserAllMessages(userId).get(otherUserId);
@@ -73,11 +78,14 @@ public class MessageService {
 		return chat;
 	}
 
-	public void sendMessage(long senderId, long receiverId, String text) throws ElementNotFoundException {
+	public void sendMessage(long senderId, long receiverId, SendMessageDTO sendMessageDTO) throws UnauthorizedException, ElementNotFoundException {
+		if ( senderId == receiverId) {
+			throw new UnauthorizedException("User can not send message to himself!");
+		}
 		LocalDateTime time = LocalDateTime.now();
 		userService.getUserById(senderId);
 		userService.getUserById(receiverId);
-		Message message = new Message(null,senderId,receiverId,text, time);
+		Message message = new Message(null,senderId,receiverId, sendMessageDTO.getText(), time);
 		messageRepository.saveAndFlush(message);
 	}
 
