@@ -21,7 +21,6 @@ import lombok.ToString;
 @Entity
 @Table(name = "reviews")
 @Getter
-@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 public class Review {

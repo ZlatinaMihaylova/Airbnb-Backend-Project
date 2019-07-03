@@ -26,4 +26,5 @@ public class GetRoomInfoDTO {
 	private String details;
 	private List<String> photos;
 	private List<String> amenities;
+	private List<GetReviewsForRoomDTO> reviews;
 }

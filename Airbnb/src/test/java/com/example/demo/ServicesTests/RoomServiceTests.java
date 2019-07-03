@@ -125,6 +125,29 @@ public class RoomServiceTests {
         Assert.assertEquals(room.getDetails(),result.getDetails());
         Assert.assertEquals(room.getCity(),result.getCity());
     }
+
+    @Test
+    public void addRoomShouldSaveCity() throws ElementNotFoundException {
+        AddRoomDTO newRoom = new AddRoomDTO("Room", "City",
+                "Address", 5, 2,3,4,5, "Details", new LinkedList<>());
+        Mockito.when(cityRepository.findByName(newRoom.getCity())).thenReturn(Optional.empty());
+        City newCity = new City(1L, newRoom.getCity());
+        roomService.addRoom(newRoom,room.getUserId());
+        Mockito.verify(cityRepository).save(newCity);
+
+    }
+
+    @Test
+    public void addRoomShouldSaveAmenity() throws ElementNotFoundException {
+        AddRoomDTO newRoom = new AddRoomDTO("Room", "City",
+                "Address", 5, 2,3,4,5, "Details", new LinkedList<>(Arrays.asList("Amenity")));
+        Mockito.when(cityRepository.findByName(newRoom.getCity())).thenReturn(Optional.of(city));
+        Amenity newAmenity = new Amenity(1L, newRoom.getAmenities().get(0), new LinkedList<>() );
+        roomService.addRoom(newRoom,room.getUserId());
+        Mockito.verify(amenityRepository).save(newAmenity);
+
+    }
+
     @Test(expected = ElementNotFoundException.class)
     public void deleteRoomNotFound() throws UnauthorizedException, ElementNotFoundException {
         Mockito.when(roomRepository.findById(room.getId())).thenReturn(Optional.empty());
@@ -132,12 +155,31 @@ public class RoomServiceTests {
         Mockito.verify(roomRepository).delete(room);
     }
 
-
     @Test
     public void deleteRoom() throws UnauthorizedException, ElementNotFoundException {
         Mockito.when(roomRepository.findById(room.getId())).thenReturn(Optional.of(room));
         roomService.removeRoom(room.getId(),room.getUserId());
+
+    }
+
+    @Test
+    public void deleteRoomShouldRemoveRoomFromFavourites() throws UnauthorizedException, ElementNotFoundException {
+        Mockito.when(roomRepository.findById(room.getId())).thenReturn(Optional.of(room));
+        User user = new User(1L, "FirstName", "LastName", "goodPassword1234", "email@gmail.com", LocalDate.now(),"1234",new LinkedList<>(Arrays.asList(room)));
+        room.getInFavourites().add(user);
+        roomService.removeRoom(room.getId(),room.getUserId());
         Mockito.verify(roomRepository).delete(room);
+        Assert.assertTrue(user.getFavourites().isEmpty());
+    }
+
+    @Test
+    public void deleteRoomShouldRemoveRoomFromAmenities() throws UnauthorizedException, ElementNotFoundException {
+        Mockito.when(roomRepository.findById(room.getId())).thenReturn(Optional.of(room));
+        User user = new User(1L, "FirstName", "LastName", "goodPassword1234", "email@gmail.com", LocalDate.now(),"1234",new LinkedList<>(Arrays.asList(room)));
+        room.getInFavourites().add(user);
+        roomService.removeRoom(room.getId(),room.getUserId());
+        Mockito.verify(roomRepository).delete(room);
+        Assert.assertTrue(user.getFavourites().isEmpty());
     }
 
 
@@ -292,15 +334,17 @@ public class RoomServiceTests {
     }
 
     @Test
-    public void convertRoomToRoomInfoDTO() {
+    public void convertRoomToRoomInfoDTO() throws ElementNotFoundException{
         Mockito.when(photoRepository.findByRoomId(room.getId())).thenReturn(new LinkedList<>(Arrays.asList(photo)));
         Mockito.when(reviewService.getRoomRating(room)).thenReturn(1.0);
+        Mockito.when(reviewService.getAllReviewsByRoomId(room.getId())).thenReturn(new LinkedList<>());
         Mockito.when(reviewService.getRoomTimesRated(room)).thenReturn(1);
 
         GetRoomInfoDTO expected = new GetRoomInfoDTO(photo.getUrl(),room.getName(),room.getCity().getName(),room.getAddress(),
                 room.getGuests(),room.getBedrooms(),room.getBeds(),room.getBaths(),room.getPrice(),
                 room.getDetails(), photoRepository.findByRoomId(room.getId()).stream().map(photo -> photo.getUrl()).collect(Collectors.toList()),
-                room.getAmenities().stream().map(amenity -> amenity.getName()).collect(Collectors.toList()));
+                room.getAmenities().stream().map(amenity -> amenity.getName()).collect(Collectors.toList()),
+                new LinkedList<>());
 
         GetRoomInfoDTO result = roomService.convertRoomToRoomInfoDTO(room);
 

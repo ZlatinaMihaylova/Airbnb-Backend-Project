@@ -26,7 +26,8 @@ public class MessageService {
 	private UserService userService;
 
 	public Map<Long, TreeSet<Message>> getUserAllMessages(long userId){
-		Map<Long, TreeSet<Message>> userAllMessages = new HashMap<Long, TreeSet<Message>>();
+		Map<Long, TreeSet<Message>> userAllMessages = new TreeMap<Long, TreeSet<Message>>();
+
 		for (Message message : messageRepository.findAll()) {
 			Long otherUserId = null;
 			if (message.getSenderId().equals(userId)) {
@@ -65,9 +66,8 @@ public class MessageService {
 			throw new UnauthorizedException("User don't have messages with himself!");
 		}
 		List<ChatWithUserDTO> chat = new LinkedList<>();
-		Set<Message> messages = new TreeSet<Message>((m1,m2) -> m1.getDateTime().compareTo(m2.getDateTime()));
-		messages = this.getUserAllMessages(userId).get(otherUserId);
-		if ( messages.isEmpty()) {
+		Set<Message> messages =  getUserAllMessages(userId).get(otherUserId);
+		if ( messages == null) {
 			throw new ElementNotFoundException("No messages with this user!");
 		}
 

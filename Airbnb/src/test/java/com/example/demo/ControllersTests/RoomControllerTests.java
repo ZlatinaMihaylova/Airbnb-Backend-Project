@@ -83,7 +83,7 @@ public class RoomControllerTests {
         Mockito.when(roomService.getRoomById(room.getId())).thenReturn(room);
         Mockito.when(roomService.convertRoomToRoomInfoDTO(room))
                 .thenReturn(new GetRoomInfoDTO("photo", room.getName(), room.getCity().getName(), room.getAddress(), room.getGuests(), room.getBedrooms(), room.getBeds(), room.getBaths(),
-                        room.getPrice(), room.getDetails(), new LinkedList<>(), new LinkedList<>()));
+                        room.getPrice(), room.getDetails(), new LinkedList<>(), new LinkedList<>(), new LinkedList<>()));
 
         mvc.perform(MockMvcRequestBuilders
                 .get("/rooms/roomId={roomId}", room.getId())

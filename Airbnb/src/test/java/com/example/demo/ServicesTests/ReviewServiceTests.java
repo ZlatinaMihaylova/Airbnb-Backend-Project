@@ -151,7 +151,7 @@ public class ReviewServiceTests {
         System.out.println(LocalDateTime.now());
         Review review = reviews.get(1);
         GetReviewsForRoomDTO expected = new GetReviewsForRoomDTO("FirstName LastName",
-                LocalDateTime.of(2017,Month.FEBRUARY,3,6,30,40,50000),"Text");
+                LocalDateTime.of(2017,Month.FEBRUARY,3,6,30,40,50000),review.getStars(), "Text");
         GetReviewsForRoomDTO result = reviewService.convertReviewToDTO(review);
 
         Assert.assertEquals(expected.getUserName(), result.getUserName());

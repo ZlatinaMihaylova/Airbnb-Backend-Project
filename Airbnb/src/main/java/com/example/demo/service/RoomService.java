@@ -53,25 +53,30 @@ public class RoomService {
 	}
 
 	public Room addRoom(AddRoomDTO room, Long userId) throws ElementNotFoundException {
-		if (!cityRepository.findByName(room.getCity()).isPresent()) {
-			City c = new City();
-			String cityName =  room.getCity().substring(0,1).toUpperCase() + room.getCity().substring(1).toLowerCase();
-			c.setName(cityName);
-			cityRepository.save(c);
+		userService.getUserById(userId);
+		City city = new City();
+		String cityName =  room.getCity().substring(0,1).toUpperCase() + room.getCity().substring(1).toLowerCase();
+		city.setName(cityName);
+		city.setId(null);
+		if (!cityRepository.findByName(cityName).isPresent()) {
+			cityRepository.save(city);
+		}else {
+			city = cityRepository.findByName(cityName).orElseThrow(() -> new ElementNotFoundException("City not found"));
 		}
 		List<Amenity> amenities = new LinkedList<>();
 		for (String amenity : room.getAmenities()){
+			Amenity newAmenity = new Amenity(null, amenity.substring(0,1).toUpperCase() + amenity.substring(1).toLowerCase(), new LinkedList<>());
 			if (!amenityRepository.findByName(amenity).isPresent()) {
-				amenity = amenity.substring(0,1).toUpperCase() + amenity.substring(1).toLowerCase();
-				Amenity newAmenity = new Amenity(null, amenity, new HashSet<>());
 				amenityRepository.save(newAmenity);
+			}else {
+				newAmenity = amenityRepository.findByName(amenity).orElseThrow(() -> new ElementNotFoundException("Amenity not found"));
 			}
-			amenities.add(amenityRepository.findByName(amenity).orElseThrow(() -> new ElementNotFoundException("Amenity not found")));
+			amenities.add(newAmenity);
 		}
 
 		Room result = new Room(null, room.getName(), room.getAddress(), room.getGuests(), room.getBedrooms(), room.getBeds(),
 				room.getBaths(), room.getPrice(), room.getDetails(), amenities,
-				cityRepository.findByName(room.getCity()).orElseThrow(() -> new ElementNotFoundException("City not found")), userId,null);
+				city, userId,null);
 
 		roomRepository.saveAndFlush(result);
 
@@ -84,12 +89,15 @@ public class RoomService {
 		this.removeAllPhotosForRoom(roomId);
 		reviewService.removeAllReviewsForRoom(roomId);
 		Room room = roomRepository.findById(roomId).orElseThrow(() -> new ElementNotFoundException("Room not found."));
-		List<User> inFavourites = room.getInFavourites();
-		for ( User u : inFavourites) {
+		for ( User u : room.getInFavourites()) {
 			u.getFavourites().remove(room);
 			userService.saveUserToDB(u);
 		}
 		List<Amenity> amenities = room.getAmenities();
+		for ( Amenity amenity : amenities) {
+			amenity.getRooms().remove(room);
+			amenityRepository.saveAndFlush(amenity);
+		}
 		for ( Amenity amenity : amenities) {
 			amenity.getRooms().remove(room);
 			amenityRepository.saveAndFlush(amenity);
@@ -115,11 +123,19 @@ public class RoomService {
 
 	public List<Room> getRoomsByCityDatesGuests(String city, LocalDate checkin, LocalDate checkout, int guests) {
 		return roomRepository
-				.findByCityName(city)
+				.findByCityNameContaining(city)
 				.stream()
 				.filter(room -> room.getGuests() >= guests)
 				.filter(room -> isRoomFree(room, checkin, checkout))
 				.collect(Collectors.toList());
+	}
+
+	public List<Room> filterRoomsByAmenities(List<Room> rooms, List<String> amenitiesNames) throws ElementNotFoundException {
+		List<Amenity> amenities = new LinkedList<Amenity>();
+		for( String amenity: amenitiesNames) {
+			amenities.add(amenityRepository.findByName(amenity).orElseThrow(() -> new ElementNotFoundException("Amenity not found!")));
+		}
+		return rooms.stream().filter(room -> room.getAmenities().containsAll(amenities) ).collect(Collectors.toList());
 	}
 
 	public void addPhoto(long roomId, long userId , AddPhotoDTO p) throws ElementNotFoundException, UnauthorizedException {
@@ -159,13 +175,14 @@ public class RoomService {
 				reviewService.getRoomRating(room), reviewService.getRoomTimesRated(room));
 	}
 
-	public GetRoomInfoDTO convertRoomToRoomInfoDTO(Room room) {
+	public GetRoomInfoDTO convertRoomToRoomInfoDTO(Room room) throws ElementNotFoundException{
 		List<String> amenities = room.getAmenities().stream().map(amenity -> amenity.getName())
 				.collect(Collectors.toList());
 		List<String> photos = photoRepository.findByRoomId(room.getId()).stream()
 				.map(photo -> photo.getUrl()).collect(Collectors.toList());
 		return new GetRoomInfoDTO(getMainPhoto(room.getId()),room.getName(),room.getCity().getName(),room.getAddress(), room.getGuests(), room.getBedrooms(), room.getBeds(), room.getBaths(),
-				room.getPrice(), room.getDetails(), photos, amenities);
+				room.getPrice(), room.getDetails(), photos, amenities,
+				reviewService.getAllReviewsByRoomId(room.getId()).stream().map(review -> reviewService.convertReviewToDTO(review)).collect(Collectors.toList()));
 	}
 
 	public List<LocalDate> getRoomAvailability(long roomId) throws  ElementNotFoundException {
@@ -180,4 +197,5 @@ public class RoomService {
 			return "";
 		}
 	}
+
 }

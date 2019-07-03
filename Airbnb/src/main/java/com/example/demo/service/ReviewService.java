@@ -67,6 +67,6 @@ public class ReviewService {
 	}
 
 	public GetReviewsForRoomDTO convertReviewToDTO(Review review) {
-		return new GetReviewsForRoomDTO(review.getUser().viewAllNames(), review.getDate(),review.getText());
+		return new GetReviewsForRoomDTO(review.getUser().viewAllNames(), review.getDate(), review.getStars(), review.getText());
 	}
 }

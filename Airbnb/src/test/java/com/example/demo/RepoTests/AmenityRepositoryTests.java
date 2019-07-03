@@ -14,6 +14,7 @@ import org.springframework.test.context.junit4.SpringRunner;
 import static org.hamcrest.Matchers.*;
 
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
 
@@ -36,9 +37,9 @@ public class AmenityRepositoryTests {
 
     @Test
     public void whenFindAll_thenReturnListOfUsers() {
-        Amenity firstAmenity = new Amenity(null, "firstAmenity", new HashSet<>());
+        Amenity firstAmenity = new Amenity(null, "firstAmenity", new LinkedList<>());
         testEntityManager.persist(firstAmenity);
-        Amenity secondAmenity = new Amenity(null, "secondAmenity", new HashSet<>());
+        Amenity secondAmenity = new Amenity(null, "secondAmenity", new LinkedList<>());
         testEntityManager.persist(secondAmenity);
 
         List<Amenity> amenities = amenityRepository.findAll();
@@ -52,7 +53,7 @@ public class AmenityRepositoryTests {
 
     @Test
     public void shouldFindAmenityByID() {
-        Amenity amenity = new Amenity(null, "Amenity", new HashSet<>());
+        Amenity amenity = new Amenity(null, "Amenity", new LinkedList<>());
         testEntityManager.persist(amenity);
         Assert.assertEquals(Optional.of(amenity), amenityRepository.findById(amenity.getId()));
     }
@@ -64,7 +65,7 @@ public class AmenityRepositoryTests {
 
     @Test
     public void shouldFindAmenityByName() {
-        Amenity amenity = new Amenity(null, "Amenity", new HashSet<>());
+        Amenity amenity = new Amenity(null, "Amenity", new LinkedList<>());
         testEntityManager.persist(amenity);
         Assert.assertEquals(Optional.of(amenity), amenityRepository.findByName("Amenity"));
     }

@@ -19,6 +19,7 @@ import org.mockito.internal.matchers.Equals;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.boot.test.context.SpringBootTest;
 
+import java.lang.reflect.Array;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
@@ -100,6 +101,18 @@ public class MessageServiceTests {
         Assert.assertEquals(expected, result);
     }
 
+    @Test(expected = UnauthorizedException.class)
+    public void getMessagesWithUserByIdShouldReturnUnauthorizedException() throws UnauthorizedException, ElementNotFoundException{
+        messageService.getMessagesWithUserById(user1.getId(), 1L);
+    }
+
+    @Test(expected = ElementNotFoundException.class)
+    public void getMessagesWithUserByIdShouldReturnElementNotFoundException() throws UnauthorizedException, ElementNotFoundException{
+        Map<Long, TreeSet<Message>> userAllMessages = new TreeMap<Long, TreeSet<Message>>();
+        Mockito.when(messageServiceMock.getUserAllMessages(user1.getId())).thenReturn(userAllMessages);
+        messageService.getMessagesWithUserById(user1.getId(), 3L);
+    }
+
     @Test
     public void sendMessage() throws UnauthorizedException, ElementNotFoundException {
         Mockito.when(userServiceMock.getUserById(user1.getId())).thenReturn(user1);
@@ -114,6 +127,12 @@ public class MessageServiceTests {
         Assert.assertEquals(message.getSenderId(), argument.getValue().getSenderId());
         Assert.assertEquals(message.getReceiverId(), argument.getValue().getReceiverId());
         Assert.assertEquals(message.getText(), argument.getValue().getText());
+
+    }
+
+    @Test(expected = UnauthorizedException.class)
+    public void sendMessageShouldReturnUnauthorizedException() throws UnauthorizedException, ElementNotFoundException {
+        messageService.sendMessage(user1.getId(), user1.getId(), new SendMessageDTO());
 
     }
 }

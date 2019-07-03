@@ -14,6 +14,7 @@ public class GetReviewsForRoomDTO {
 	
 	private String userName;
 	private LocalDateTime date;
+	private int stars;
 	private String text;
 	
 

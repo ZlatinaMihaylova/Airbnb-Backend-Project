@@ -14,6 +14,9 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -79,11 +82,12 @@ public class RoomController {
 	}
 
 	@GetMapping("/rooms/search")
-	public List<GetListOfRoomDTO> getRoomsByCityDatesGuests(@RequestParam("city") @NotEmpty @Validated String city,
+	public List<GetListOfRoomDTO> getRoomsByCityDatesGuests(@RequestParam(value = "city", defaultValue = "") @NotEmpty @Validated String city,
 															@RequestParam(name = "checkin") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) @FutureOrPresent @Valid LocalDate checkInDate,
 															@RequestParam(name = "checkout") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) @Future @Valid  LocalDate checkOutDate,
-															@RequestParam(name = "guests", defaultValue = "0") @PositiveOrZero @Valid int guests) throws ElementNotFoundException {
-		return roomService.getRoomsByCityDatesGuests(city, checkInDate, checkOutDate, guests)
+															@RequestParam(name = "guests", defaultValue = "0") @PositiveOrZero @Valid int guests,
+															@RequestParam(name = "amenities", defaultValue = "") List<String> amenities) throws ElementNotFoundException {
+		return roomService.filterRoomsByAmenities(roomService.getRoomsByCityDatesGuests(city, checkInDate, checkOutDate, guests), amenities)
 				.stream()
 				.map(room -> roomService.convertRoomToDTO(room))
 				.collect(Collectors.toList());

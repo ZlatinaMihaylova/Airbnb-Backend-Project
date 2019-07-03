@@ -80,7 +80,7 @@ public class ReviewControllerTests {
     @Test
     public void getAllReviewsByRoomIdShouldReturnReview() throws Exception {
         Mockito.when(reviewService.getAllReviewsByRoomId(room.getId())).thenReturn(new LinkedList<>(Arrays.asList(review)));
-        Mockito.when(reviewService.convertReviewToDTO(review)).thenReturn(new GetReviewsForRoomDTO(user.viewAllNames(), review.getDate(), review.getText()));
+        Mockito.when(reviewService.convertReviewToDTO(review)).thenReturn(new GetReviewsForRoomDTO(user.viewAllNames(), review.getDate(),review.getStars(), review.getText()));
 
         mvc.perform(MockMvcRequestBuilders
                 .get("/rooms/roomId={roomId}/reviews", room.getId())
@@ -90,6 +90,7 @@ public class ReviewControllerTests {
                 .andExpect(jsonPath("$", Matchers.hasSize(1)))
                 .andExpect(jsonPath("$[0].userName", Matchers.is(user.viewAllNames())))
                 .andExpect(jsonPath("$[0].date", Matchers.is(localDateTime.toString())))
+                .andExpect(jsonPath("$[0].stars", Matchers.is(review.getStars())))
                 .andExpect(jsonPath("$[0].text", Matchers.is(review.getText())));
     }
 

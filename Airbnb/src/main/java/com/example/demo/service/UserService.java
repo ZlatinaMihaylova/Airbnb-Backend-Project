@@ -89,7 +89,8 @@ public class UserService {
 		session.invalidate();
 	}
 
-	public User changeInformation(long userId, EditProfileDTO editProfileDTO) throws NoSuchAlgorithmException, UnsupportedEncodingException, BadRequestException {
+	public User changeInformation(long userId, EditProfileDTO editProfileDTO) throws ElementNotFoundException, NoSuchAlgorithmException, UnsupportedEncodingException, BadRequestException {
+		getUserById(userId);
 		if ( !this.isPasswordValid(editProfileDTO.getPassword()) || !this.isValidEmailAddress(editProfileDTO.getEmail())) {
 			throw new BadRequestException("Invalid email or password");
 		}
@@ -133,7 +134,6 @@ public class UserService {
 		if (session.getAttribute("userId") == null) {
 			throw new UnauthorizedException("You must login first");
 		}
-
 		return (long) session.getAttribute("userId");
 	}
 }

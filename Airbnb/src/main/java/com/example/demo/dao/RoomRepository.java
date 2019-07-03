@@ -17,4 +17,5 @@ public interface RoomRepository extends JpaRepository<Room, Integer>{
 	List<Room> findAll();
 	List<Room> findByUserId(long userId);
 	List<Room> findByCityName(String cityName);
+	List<Room> findByCityNameContaining(String cityName);
 }

@@ -1,5 +1,6 @@
 package com.example.demo.model;
 
+import java.util.List;
 import java.util.Set;
 
 import javax.persistence.*;
@@ -9,9 +10,9 @@ import lombok.*;
 @Entity
 @Table(name="amenities")
 @Getter
-@Setter
 @AllArgsConstructor
 @NoArgsConstructor
+@EqualsAndHashCode(of ={"name"})
 public class Amenity {
 	
 	@Id
@@ -22,5 +23,5 @@ public class Amenity {
 	private String name;
 
 	@ManyToMany(mappedBy = "amenities",cascade = CascadeType.ALL)
-	private Set<Room> rooms;
+	private List<Room> rooms;
 }
