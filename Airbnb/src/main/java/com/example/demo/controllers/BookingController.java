@@ -8,6 +8,7 @@ import com.example.demo.exceptions.ElementNotFoundException;
 import com.example.demo.exceptions.UnauthorizedException;
 import com.example.demo.model.Booking;
 import com.example.demo.service.BookingService;
+import com.example.demo.service.RoomService;
 import com.example.demo.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -23,12 +24,18 @@ import java.util.stream.Collectors;
 public class BookingController {
 
     @Autowired
+    private UserService userService;
+
+    @Autowired
+    private RoomService roomService;
+
+    @Autowired
     private BookingService bookingService;
 
     @PostMapping("/rooms/roomId={roomId}/bookings")
     public ModelAndView makeReservation(@PathVariable long roomId, @RequestBody @Valid AddBookingDTO addBookingDTO, HttpServletRequest request) throws ElementNotFoundException, UnauthorizedException, BookingIsOverlapingException, BadRequestException {
         long userId = UserService.authentication(request);
-        bookingService.makeReservation(roomId, addBookingDTO, userId);
+        bookingService.makeReservation(roomService.getRoomById(roomId), addBookingDTO, userService.getUserById(userId));
         return new ModelAndView("redirect:/myBookings");
     }
 

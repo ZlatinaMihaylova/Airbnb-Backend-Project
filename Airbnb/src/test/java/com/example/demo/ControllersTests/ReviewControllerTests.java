@@ -79,8 +79,9 @@ public class ReviewControllerTests {
 
     @Test
     public void getAllReviewsByRoomIdShouldReturnReview() throws Exception {
-        Mockito.when(reviewService.getAllReviewsByRoomId(room.getId())).thenReturn(new LinkedList<>(Arrays.asList(review)));
+        Mockito.when(reviewService.getAllReviewsByRoom(room)).thenReturn(new LinkedList<>(Arrays.asList(review)));
         Mockito.when(reviewService.convertReviewToDTO(review)).thenReturn(new GetReviewsForRoomDTO(user.viewAllNames(), review.getDate(),review.getStars(), review.getText()));
+        Mockito.when(roomService.getRoomById(room.getId())).thenReturn(room);
 
         mvc.perform(MockMvcRequestBuilders
                 .get("/rooms/roomId={roomId}/reviews", room.getId())
@@ -97,6 +98,8 @@ public class ReviewControllerTests {
     @Test
     public void addReviewForRoomShouldPass() throws Exception {
         AddReviewDTO addReviewDTO = new AddReviewDTO("Text", 4);
+        Mockito.when(roomService.getRoomById(room.getId())).thenReturn(room);
+        Mockito.when(userService.getUserById(user.getId())).thenReturn(user);
 
         mvc.perform(MockMvcRequestBuilders
                 .post("/rooms/roomId={roomId}/reviews", room.getId())
@@ -105,11 +108,11 @@ public class ReviewControllerTests {
                 .content(objectMapper.writeValueAsString(addReviewDTO)))
                 .andDo(MockMvcResultHandlers.print())
                 .andExpect(status().isFound())
-                .andExpect(redirectedUrl("/rooms/" + room.getId() +"/reviews" ));
+                .andExpect(redirectedUrl("/rooms/roomId=" + room.getId() +"/reviews" ));
 
         ArgumentCaptor<AddReviewDTO> addReviewCaptor = ArgumentCaptor.forClass(AddReviewDTO.class);
         Mockito.verify(reviewService, Mockito.times(1))
-                .addReviewForRoom(Mockito.eq(user.getId()), Mockito.eq(room.getId()), addReviewCaptor.capture());
+                .addReviewForRoom(Mockito.eq(user), Mockito.eq(room), addReviewCaptor.capture());
         Assert.assertEquals(addReviewDTO.getText(), addReviewCaptor.getValue().getText());
         Assert.assertEquals(addReviewDTO.getStars(), addReviewCaptor.getValue().getStars());
     }

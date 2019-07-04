@@ -103,6 +103,7 @@ public class RoomControllerTests {
     @Test
     public void getAllRooms() throws Exception {
         Mockito.when(roomService.getAllRooms()).thenReturn(new LinkedList<>(Arrays.asList(room)));
+        Mockito.when(roomService.sortRoomsByRating(new LinkedList<>(Arrays.asList(room)))).thenReturn(new LinkedList<>(Arrays.asList(room)));
         Mockito.when(roomService.convertRoomToDTO(room)).thenReturn(new GetListOfRoomDTO("1", room.getName(), city.getName(), 3.4, 3));
 
         mvc.perform(MockMvcRequestBuilders
@@ -115,8 +116,8 @@ public class RoomControllerTests {
 
     @Test
     public void addRoomOK() throws Exception {
-        Mockito.when(roomService.addRoom(Mockito.any(AddRoomDTO.class), Mockito.anyLong())).thenReturn(room);
-
+        Mockito.when(roomService.addRoom(Mockito.any(AddRoomDTO.class),Mockito.any(User.class))).thenReturn(room);
+        Mockito.when(userService.getUserById(user.getId())).thenReturn(user);
         AddRoomDTO addRoomDTO = new AddRoomDTO("Room", "City",
                 "Address", 5, 2, 3, 4, 5, "Details", new LinkedList<>());
 
@@ -130,7 +131,7 @@ public class RoomControllerTests {
 
     @Test
     public void addRoomShouldReturnBadRequestEmptyName() throws Exception {
-        Mockito.when(roomService.addRoom(Mockito.any(AddRoomDTO.class), Mockito.anyLong())).thenReturn(room);
+        Mockito.when(roomService.addRoom(Mockito.any(AddRoomDTO.class), Mockito.any(User.class))).thenReturn(room);
 
         AddRoomDTO addRoomDTO = new AddRoomDTO("", "City",
                 "Address", 5, 2, 3, 4, 5, "Details", new LinkedList<>());
@@ -144,7 +145,7 @@ public class RoomControllerTests {
 
     @Test
     public void addRoomShouldReturnBadRequestGuestsNotPositive() throws Exception {
-        Mockito.when(roomService.addRoom(Mockito.any(AddRoomDTO.class), Mockito.anyLong())).thenReturn(room);
+        Mockito.when(roomService.addRoom(Mockito.any(AddRoomDTO.class), Mockito.any(User.class))).thenReturn(room);
 
         AddRoomDTO addRoomDTO = new AddRoomDTO("Name", "City",
                 "Address", 0, 1, 3, 4, 5, "Details", new LinkedList<>());
@@ -165,8 +166,9 @@ public class RoomControllerTests {
 
     @Test
     public void getUserRooms() throws Exception {
-        Mockito.when(roomService.getUserRooms(user.getId())).thenReturn(new LinkedList<>(Arrays.asList(room)));
+        Mockito.when(roomService.getUserRooms(user)).thenReturn(new LinkedList<>(Arrays.asList(room)));
         Mockito.when(roomService.convertRoomToDTO(room)).thenReturn(new GetListOfRoomDTO("1", room.getName(), city.getName(), 3.4, 3));
+        Mockito.when(userService.getUserById(user.getId())).thenReturn(user);
 
         mvc.perform(MockMvcRequestBuilders.get("/userId={userId}/rooms", user.getId())
                 .contentType(MediaType.APPLICATION_JSON))
@@ -189,13 +191,16 @@ public class RoomControllerTests {
         Mockito.when(roomService.getRoomsByCityDatesGuests(Mockito.any(String.class),Mockito.any(LocalDate.class),
                 Mockito.any(LocalDate.class), Mockito.any(int.class))).thenReturn(new LinkedList<>(Arrays.asList(room)));
         Mockito.when(roomService.convertRoomToDTO(room)).thenReturn(new GetListOfRoomDTO("1", room.getName(), city.getName(), 3.4, 3));
+        Mockito.when(roomService.sortRoomsByRating(new LinkedList<>(Arrays.asList(room)))).thenReturn(new LinkedList<>(Arrays.asList(room)));
+        Mockito.when(roomService.filterRoomsByAmenities(new LinkedList<>(Arrays.asList(room)), new LinkedList<>(Arrays.asList("spa")))).thenReturn(new LinkedList<>(Arrays.asList(room)));
 
         mvc.perform(MockMvcRequestBuilders.get("/rooms/search")
                 .contentType(MediaType.APPLICATION_JSON)
                 .param("city", city.getName())
                 .param("checkin", LocalDate.now().plusDays(1).toString())
                 .param("checkout",LocalDate.now().plusDays(10).toString())
-                .param("guests", "2"))
+                .param("guests", "2")
+                .param("amenities", "spa"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", Matchers.hasSize(1)));
     }
@@ -257,6 +262,8 @@ public class RoomControllerTests {
     @Test
     public void addPhotoShouldReturnFoundAndRedirect() throws Exception {
         AddPhotoDTO addPhotoDTO = new AddPhotoDTO("Photo");
+        Mockito.when(roomService.getRoomById(room.getId())).thenReturn(room);
+        Mockito.when(userService.getUserById(user.getId())).thenReturn(user);
 
         mvc.perform(MockMvcRequestBuilders.post("/rooms/roomId={roomId}/addPhoto", room.getId())
                 .session(session)
@@ -267,7 +274,7 @@ public class RoomControllerTests {
 
         ArgumentCaptor<AddPhotoDTO> photoCaptor = ArgumentCaptor.forClass(AddPhotoDTO.class);
         Mockito.verify(roomService, Mockito.times(1))
-                .addPhoto(Mockito.eq(room.getId()), Mockito.eq(user.getId()), photoCaptor.capture());
+                .addPhoto(Mockito.eq(room), Mockito.eq(user), photoCaptor.capture());
         Assert.assertEquals(addPhotoDTO.getUrl(), photoCaptor.getValue().getUrl());
     }
 
@@ -282,8 +289,9 @@ public class RoomControllerTests {
 
     @Test
     public void getInFavouritesOk() throws Exception {
-        Mockito.when(roomService.viewInFavouritesUser(room.getId())).thenReturn(new LinkedList<>(Arrays.asList(user)));
+        Mockito.when(roomService.viewInFavouritesUser(room)).thenReturn(new LinkedList<>(Arrays.asList(user)));
         Mockito.when(userService.convertUserToDTO(user)).thenReturn(new GetUserProfileDTO(user.viewAllNames(), user.getPhone(),new LinkedList<>(), new LinkedList<>()));
+        Mockito.when(roomService.getRoomById(room.getId())).thenReturn(room);
 
         mvc.perform(MockMvcRequestBuilders.get("/rooms/roomId={roomId}/getInFavourites", room.getId())
                 .contentType(MediaType.APPLICATION_JSON))
@@ -295,8 +303,9 @@ public class RoomControllerTests {
 
     @Test
     public void getRoomAvailability() throws Exception {
-        Mockito.when(roomService.getRoomAvailability(room.getId()))
+        Mockito.when(roomService.getRoomAvailability(room))
                 .thenReturn(new LinkedList<>(Arrays.asList(LocalDate.now().plusDays(1))));
+        Mockito.when(roomService.getRoomById(room.getId())).thenReturn(room);
 
         mvc.perform(MockMvcRequestBuilders.get("/rooms/roomId={roomId}/availability", room.getId())
                 .contentType(MediaType.APPLICATION_JSON))

@@ -7,6 +7,7 @@ import java.util.stream.Collectors;
 import com.example.demo.exceptions.BadRequestException;
 import com.example.demo.exceptions.ElementNotFoundException;
 import com.example.demo.model.Room;
+import com.example.demo.model.User;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -28,22 +29,20 @@ public class ReviewService {
 	@Autowired
 	private UserService userService;
 
-	public List<Review> getAllReviewsByRoomId(Long roomId) throws ElementNotFoundException {
-		roomService.getRoomById(roomId);
-		return reviewRepository.findByRoomId(roomId);
+	public List<Review> getAllReviewsByRoom(Room room) {
+		return reviewRepository.findByRoomId(room.getId());
 	}
 
-	public void addReviewForRoom(long userId,long roomId, AddReviewDTO reviewDTO) throws ElementNotFoundException, UnauthorizedException,BadRequestException {
+	public void addReviewForRoom(User user, Room room, AddReviewDTO reviewDTO) throws  UnauthorizedException,BadRequestException {
 		LocalDateTime time = LocalDateTime.now();
-		if ( roomService.getRoomById(roomId).getUserId() == userId) {
+		if ( room.getUserId() == user.getId()) {
 			throw new UnauthorizedException("User can not add review for his own room!");
 		}
 		if ( reviewDTO.getStars() < 1 || reviewDTO.getStars() > 5) {
 			throw new BadRequestException("Wrong stars count!");
 		}
 		reviewRepository.saveAndFlush(new Review(null,time,reviewDTO.getText(),
-				userService.getUserById(userId),
-				roomService.getRoomById(roomId), reviewDTO.getStars()));
+				user, room, reviewDTO.getStars()));
 	}
 
 	public double getRoomRating(Room room) {
@@ -55,18 +54,31 @@ public class ReviewService {
 		return (int) reviewRepository.findByRoomId(room.getId()).stream().count();
 	}
 
-	public void removeAllReviewsForRoom(long roomId) {
-		List<Review> reviewsForRoom = reviewRepository.findByRoomId(roomId);
+	public void removeAllReviewsForRoom(Room room) {
+		List<Review> reviewsForRoom = reviewRepository.findByRoomId(room.getId());
 		reviewRepository.deleteAll(reviewsForRoom);
 	}
 
-	public List<Review> getAllReviewsForUser(long userId) throws ElementNotFoundException{
-		userService.getUserById(userId);
-		return reviewRepository.findAll().stream().filter(review -> review.getRoom().getUserId() == userId)
+	public List<Review> getAllReviewsForUser(User user) {
+		return reviewRepository.findAll().stream().filter(review -> review.getRoom().getUserId() == user.getId())
 				.collect(Collectors.toList());
 	}
 
 	public GetReviewsForRoomDTO convertReviewToDTO(Review review) {
 		return new GetReviewsForRoomDTO(review.getUser().viewAllNames(), review.getDate(), review.getStars(), review.getText());
+	}
+
+	public double getRoomBayesianWeightedRating(Room room){
+		double averageRating = getRoomRating(room);
+		double averageRatingForAllRooms = roomService.getAllRooms().stream()
+				.mapToDouble(roomOfAll -> getRoomRating(roomOfAll)).average().orElse(0);
+		int numberOfVotes = reviewRepository.findByRoomId(room.getId()).size();
+		double averageNumberOfVotesForAllRooms = roomService
+				.getAllRooms()
+				.stream()
+				.mapToInt( roomOfAll -> reviewRepository.findByRoomId(roomOfAll.getId()).size())
+				.average().orElse(0);
+		double bayesianWeight = numberOfVotes / (numberOfVotes + averageNumberOfVotesForAllRooms);
+		return bayesianWeight * averageRating + ( 1 + bayesianWeight) * averageRatingForAllRooms;
 	}
 }

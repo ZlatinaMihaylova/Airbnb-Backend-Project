@@ -8,6 +8,7 @@ import javax.validation.Valid;
 
 import com.example.demo.exceptions.BadRequestException;
 import com.example.demo.exceptions.ElementNotFoundException;
+import com.example.demo.service.RoomService;
 import com.example.demo.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -26,17 +27,23 @@ import org.springframework.web.servlet.ModelAndView;
 public class ReviewController {
 
 	@Autowired
+	private UserService userService;
+
+	@Autowired
 	private ReviewService reviewService;
+
+	@Autowired
+	private RoomService roomService;
 
 	@GetMapping("/rooms/roomId={roomId}/reviews")
 	public Set<GetReviewsForRoomDTO> getAllReviewsByRoomId(@PathVariable long roomId) throws ElementNotFoundException {
-		return reviewService.getAllReviewsByRoomId(roomId).stream().map(review -> reviewService.convertReviewToDTO(review)).collect(Collectors.toSet());
+		return reviewService.getAllReviewsByRoom(roomService.getRoomById(roomId)).stream().map(review -> reviewService.convertReviewToDTO(review)).collect(Collectors.toSet());
 	}
 
 	@PostMapping("/rooms/roomId={roomId}/reviews")
 	public ModelAndView addReviewForRoom(@PathVariable long roomId, @RequestBody @Valid AddReviewDTO reviewDTO, HttpServletRequest request) throws UnauthorizedException, ElementNotFoundException, BadRequestException {
 		long userId = UserService.authentication(request);
-		reviewService.addReviewForRoom(userId, roomId, reviewDTO);
-		return new ModelAndView("redirect:/rooms/" + roomId +"/reviews");
+		reviewService.addReviewForRoom(userService.getUserById(userId), roomService.getRoomById(roomId), reviewDTO);
+		return new ModelAndView("redirect:/rooms/roomId=" + roomId +"/reviews");
 	}
 }

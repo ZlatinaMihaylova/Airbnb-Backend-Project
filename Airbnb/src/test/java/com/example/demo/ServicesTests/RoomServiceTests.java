@@ -79,7 +79,7 @@ public class RoomServiceTests {
     public void init() {
         user = new User(1L, "FirstName", "LastName", "goodPassword1234", "email@gmail.com", LocalDate.now(),"1234",null );
         room = new Room(1L, "Room",
-                "Address", 5, 2,3,4,5, "Details", new LinkedList<>(), city,2L, new LinkedList<>());
+                "Address", 5, 2,3,4,5, "Details", new LinkedList<>(), city,1L, new LinkedList<>());
         photo = new Photo(1L, "url", room);
     }
 
@@ -112,7 +112,7 @@ public class RoomServiceTests {
         AddRoomDTO newRoom = new AddRoomDTO("Room", "City",
                 "Address", 5, 2,3,4,5, "Details", new LinkedList<>());
         Mockito.when(cityRepository.findByName(newRoom.getCity())).thenReturn(Optional.of(city));
-        Room result = roomService.addRoom(newRoom,room.getUserId());
+        Room result = roomService.addRoom(newRoom, user);
 
         Assert.assertEquals(room.getUserId(),result.getUserId());
         Assert.assertEquals(room.getName(),result.getName());
@@ -132,7 +132,7 @@ public class RoomServiceTests {
                 "Address", 5, 2,3,4,5, "Details", new LinkedList<>());
         Mockito.when(cityRepository.findByName(newRoom.getCity())).thenReturn(Optional.empty());
         City newCity = new City(1L, newRoom.getCity());
-        roomService.addRoom(newRoom,room.getUserId());
+        roomService.addRoom(newRoom, user);
         Mockito.verify(cityRepository).save(newCity);
 
     }
@@ -143,31 +143,24 @@ public class RoomServiceTests {
                 "Address", 5, 2,3,4,5, "Details", new LinkedList<>(Arrays.asList("Amenity")));
         Mockito.when(cityRepository.findByName(newRoom.getCity())).thenReturn(Optional.of(city));
         Amenity newAmenity = new Amenity(1L, newRoom.getAmenities().get(0), new LinkedList<>() );
-        roomService.addRoom(newRoom,room.getUserId());
+        roomService.addRoom(newRoom, user);
         Mockito.verify(amenityRepository).save(newAmenity);
 
     }
 
-    @Test(expected = ElementNotFoundException.class)
-    public void deleteRoomNotFound() throws UnauthorizedException, ElementNotFoundException {
-        Mockito.when(roomRepository.findById(room.getId())).thenReturn(Optional.empty());
-        roomService.removeRoom(room.getId(),room.getUserId());
-        Mockito.verify(roomRepository).delete(room);
-    }
-
     @Test
-    public void deleteRoom() throws UnauthorizedException, ElementNotFoundException {
+    public void deleteRoom() throws UnauthorizedException {
         Mockito.when(roomRepository.findById(room.getId())).thenReturn(Optional.of(room));
-        roomService.removeRoom(room.getId(),room.getUserId());
+        roomService.removeRoom(room, user);
 
     }
 
     @Test
-    public void deleteRoomShouldRemoveRoomFromFavourites() throws UnauthorizedException, ElementNotFoundException {
+    public void deleteRoomShouldRemoveRoomFromFavourites() throws UnauthorizedException {
         Mockito.when(roomRepository.findById(room.getId())).thenReturn(Optional.of(room));
         User user = new User(1L, "FirstName", "LastName", "goodPassword1234", "email@gmail.com", LocalDate.now(),"1234",new LinkedList<>(Arrays.asList(room)));
         room.getInFavourites().add(user);
-        roomService.removeRoom(room.getId(),room.getUserId());
+        roomService.removeRoom(room, user);
         Mockito.verify(roomRepository).delete(room);
         Assert.assertTrue(user.getFavourites().isEmpty());
     }
@@ -177,7 +170,7 @@ public class RoomServiceTests {
         Mockito.when(roomRepository.findById(room.getId())).thenReturn(Optional.of(room));
         User user = new User(1L, "FirstName", "LastName", "goodPassword1234", "email@gmail.com", LocalDate.now(),"1234",new LinkedList<>(Arrays.asList(room)));
         room.getInFavourites().add(user);
-        roomService.removeRoom(room.getId(),room.getUserId());
+        roomService.removeRoom(room, user);
         Mockito.verify(roomRepository).delete(room);
         Assert.assertTrue(user.getFavourites().isEmpty());
     }
@@ -192,26 +185,22 @@ public class RoomServiceTests {
         rooms.add(new Room());
         rooms.add(new Room());
         Mockito.when(roomRepository.findByUserId(user.getId())).thenReturn(rooms);
-        Assert.assertEquals(rooms, roomService.getUserRooms(user.getId()));
+        Assert.assertEquals(rooms, roomService.getUserRooms(user));
     }
 
 
     @Test(expected = UnauthorizedException.class)
-    public void addRoomInFavouritesException() throws  ElementNotFoundException, UnauthorizedException{
-
-        User user = new User(2L, "FirstName", "LastName", "goodPassword1234", "email@gmail.com", LocalDate.now(),"1234", new LinkedList<>() );
-        Mockito.when(roomRepository.findById(room.getId())).thenReturn(Optional.of(room));
-        Mockito.when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
-        roomService.addRoomInFavourites(user.getId(), room.getId());
+    public void addRoomInFavouritesException() throws UnauthorizedException{
+        roomService.addRoomInFavourites(user, room);
     }
 
     @Test
     public void addRoomInFavouritesOK() throws  ElementNotFoundException, UnauthorizedException{
-        User user = new User(1L, "FirstName", "LastName", "goodPassword1234",
+        User user = new User(3L, "FirstName", "LastName", "goodPassword1234",
                 "email@gmail.com", LocalDate.now(),"1234", new LinkedList<>() );
         Mockito.when(roomRepository.findById(room.getId())).thenReturn(Optional.of(room));
         Mockito.when(userServiceMock.getUserById(user.getId())).thenReturn(user);
-        roomService.addRoomInFavourites(user.getId(), room.getId());
+        roomService.addRoomInFavourites(user, room);
         boolean result = room.getInFavourites().contains(user) && user.getFavourites().contains(room);
         Assert.assertTrue(result);
     }
@@ -219,16 +208,17 @@ public class RoomServiceTests {
     @Test
     public void getRoomsBySearchDTO() throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
         Mockito.when(bookingService.getAllBookingsForRoom(room.getId())).thenReturn(new LinkedList<>());
-        Mockito.when(roomRepository.findByCityName(room.getCity().getName())).thenReturn( new LinkedList<>(Arrays.asList(room)));
+        Mockito.when(roomRepository.findByCityNameContaining(room.getCity().getName())).thenReturn( new LinkedList<>(Arrays.asList(room)));
         Assert.assertEquals(new LinkedList<>(Arrays.asList(room)),
-                roomService.getRoomsByCityDatesGuests(room.getCity().getName(), LocalDate.now(),LocalDate.now(), 2));
+                roomService.getRoomsByCityDatesGuests(room.getCity().getName(), LocalDate.now(),LocalDate.now().plusDays(1), 2));
     }
 
     @Test
     public void addPhoto() throws ElementNotFoundException, UnauthorizedException{
         Mockito.when(roomRepository.findById(room.getId())).thenReturn(Optional.of(room));
-        Photo expected = new Photo(1L, "URL",room);
-        roomService.addPhoto(room.getId(), room.getUserId(), new AddPhotoDTO("URL"));
+        Photo expected = new Photo(user.getId(),"URL", room);
+        roomService.addPhoto(room, user, new AddPhotoDTO("URL"));
+
         ArgumentCaptor<Photo> argument = ArgumentCaptor.forClass(Photo.class);
         Mockito.verify(photoRepository).saveAndFlush(argument.capture());
 
@@ -241,54 +231,42 @@ public class RoomServiceTests {
         Photo photo = new Photo(1L, "url", room);
         Mockito.when(roomRepository.findById(room.getId())).thenReturn(Optional.of(room));
         Mockito.when(photoRepository.findById(photo.getId())).thenReturn(Optional.of(photo));
-        roomService.removePhoto(room.getId(),room.getUserId(),photo.getId());
+        roomService.removePhoto(room, user,photo.getId());
         Mockito.verify(photoRepository).delete(photo);
     }
 
     @Test(expected = UnauthorizedException.class)
     public void removePhotoUnauthorized() throws ElementNotFoundException, UnauthorizedException {
         Photo photo = new Photo(1L, "url", room);
+        User user = new User();
+        user.setId(4L);
         Mockito.when(roomRepository.findById(room.getId())).thenReturn(Optional.of(room));
         Mockito.when(photoRepository.findById(photo.getId())).thenReturn(Optional.of(photo));
-        roomService.removePhoto(room.getId(),4L,photo.getId());
+        roomService.removePhoto(room, user, photo.getId());
         Mockito.verify(photoRepository).delete(photo);
     }
 
-
     @Test
-    public void removeAllPhoto() throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
+    public void removeAllPhotos() throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
         Photo photo1 = new Photo(1L, "url", room);
         Photo photo2 = new Photo(2L, "url", room);
         Photo photo3 = new Photo(3L, "url", room);
         List<Photo> photos = new LinkedList<>(Arrays.asList(photo1,photo2,photo3));
-        Mockito.when(roomRepository.findById(room.getId())).thenReturn(Optional.of(room));
         Mockito.when(photoRepository.findByRoomId(room.getId())).thenReturn(photos);
 
-        Method method = roomService.getClass().getDeclaredMethod("removeAllPhotosForRoom", long.class);
+        Method method = roomService.getClass().getDeclaredMethod("removeAllPhotosForRoom", Room.class);
         method.setAccessible(true);
-        method.invoke(roomService, room.getId());
+        method.invoke(roomService, room);
         Mockito.verify(photoRepository).deleteAll(photos);
-    }
-
-    @Test(expected = ElementNotFoundException.class)
-    public void checkRoomOwnerElementNotFoundException() throws NoSuchMethodException, IllegalAccessException, InvocationTargetException, Throwable{
-        Method method = roomService.getClass().getDeclaredMethod("checkRoomOwner", long.class, long.class);
-        method.setAccessible(true);
-        try {
-            method.invoke(roomService, room.getId(), room.getUserId());
-        } catch (InvocationTargetException e) {
-            throw e.getCause();
-        }
     }
 
     @Test(expected = UnauthorizedException.class)
     public void checkRoomOwnerUnauthorizedException() throws NoSuchMethodException, IllegalAccessException, InvocationTargetException, Throwable {
-        Method method = roomService.getClass().getDeclaredMethod("checkRoomOwner", long.class, long.class);
+        Method method = roomService.getClass().getDeclaredMethod("checkRoomOwner", Room.class, User.class);
         method.setAccessible(true);
-        Mockito.when(roomRepository.findById(room.getId())).thenReturn(Optional.of(room));
 
         try {
-            method.invoke(roomService, room.getId(), 1L);
+            method.invoke(roomService, room, new User());
         } catch (InvocationTargetException e) {
             throw e.getCause();
         }
@@ -296,11 +274,10 @@ public class RoomServiceTests {
 
     @Test
     public void checkRoomOwnerSuccessful() throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
-        Method method = roomService.getClass().getDeclaredMethod("checkRoomOwner", long.class, long.class);
+        Method method = roomService.getClass().getDeclaredMethod("checkRoomOwner", Room.class, User.class);
         method.setAccessible(true);
 
-        Mockito.when(roomRepository.findById(room.getId())).thenReturn(Optional.of(room));
-        method.invoke(roomService, room.getId(), room.getUserId());
+        method.invoke(roomService, room, user);
     }
 
     @Test
@@ -337,7 +314,7 @@ public class RoomServiceTests {
     public void convertRoomToRoomInfoDTO() throws ElementNotFoundException{
         Mockito.when(photoRepository.findByRoomId(room.getId())).thenReturn(new LinkedList<>(Arrays.asList(photo)));
         Mockito.when(reviewService.getRoomRating(room)).thenReturn(1.0);
-        Mockito.when(reviewService.getAllReviewsByRoomId(room.getId())).thenReturn(new LinkedList<>());
+        Mockito.when(reviewService.getAllReviewsByRoom(room)).thenReturn(new LinkedList<>());
         Mockito.when(reviewService.getRoomTimesRated(room)).thenReturn(1);
 
         GetRoomInfoDTO expected = new GetRoomInfoDTO(photo.getUrl(),room.getName(),room.getCity().getName(),room.getAddress(),
@@ -369,7 +346,7 @@ public class RoomServiceTests {
                 new Booking(1L, LocalDate.now().plusDays(2), LocalDate.now().plusDays(4), user, room),
                 new Booking(1L, LocalDate.now().plusDays(4), LocalDate.now().plusDays(7), user, room))));
 
-        Assert.assertEquals(360, roomService.getRoomAvailability(room.getId()).size());
+        Assert.assertEquals(360, roomService.getRoomAvailability(room).size());
     }
 
     @Test
@@ -379,12 +356,14 @@ public class RoomServiceTests {
         Mockito.when(bookingServiceMock.getAllBookingsForRoom(room.getId())).thenReturn(new LinkedList<>(Arrays.asList(
                 new Booking(1L, LocalDate.now(), LocalDate.now().plusYears(1), user, room))));
 
-        Assert.assertEquals(0, roomService.getRoomAvailability(room.getId()).size());
+        Assert.assertEquals(0, roomService.getRoomAvailability(room).size());
     }
 
     @Test
     public void getMainPhoto() {
         Mockito.when(photoRepository.findByRoomId(room.getId())).thenReturn(new LinkedList<>(Arrays.asList(photo)));
-        Assert.assertEquals(photo.getUrl(), roomService.getMainPhoto(room.getId()));
+        Assert.assertEquals(photo.getUrl(), roomService.getMainPhoto(room));
     }
+
+
 }

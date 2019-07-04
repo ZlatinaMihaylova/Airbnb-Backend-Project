@@ -9,6 +9,7 @@ import javax.validation.Valid;
 
 import com.example.demo.dto.SendMessageDTO;
 import com.example.demo.exceptions.ElementNotFoundException;
+import com.example.demo.model.User;
 import com.example.demo.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -28,24 +29,27 @@ import org.springframework.web.servlet.ModelAndView;
 public class MessageController {
 
 	@Autowired
+	private UserService userService;
+
+	@Autowired
 	private MessageService messageService;
 
 	@GetMapping("/messages")
 	public List<ChatListDTO> getAllMessages(HttpServletRequest request) throws UnauthorizedException, ElementNotFoundException {
 		long userId = UserService.authentication(request);
-		return messageService.getAllMessagesForMessagePage(userId);
+		return messageService.getAllMessagesForMessagePage(userService.getUserById(userId));
 	}
 
 	@GetMapping("/messages/userId={userId}")
 	public List<ChatWithUserDTO> getMessagesWithUserById(@PathVariable long userId,HttpServletRequest request) throws UnauthorizedException, ElementNotFoundException{
 		long id = UserService.authentication(request);
-		return messageService.getMessagesWithUserById(id, userId);
+		return messageService.getMessagesWithUser(userService.getUserById(id), userService.getUserById(userId));
 	}
 
 	@PostMapping("/messages/userId={receiverId}")
 	public ModelAndView sendMessage(@PathVariable long receiverId, @RequestBody @Valid SendMessageDTO sendMessageDTO, HttpServletRequest request) throws UnauthorizedException, ElementNotFoundException {
 		long userId = UserService.authentication(request);
-		messageService.sendMessage(userId, receiverId, sendMessageDTO);
+		messageService.sendMessage(userService.getUserById(userId), userService.getUserById(receiverId), sendMessageDTO);
 		return new ModelAndView("redirect:/messages/" + receiverId);
 	}
 }

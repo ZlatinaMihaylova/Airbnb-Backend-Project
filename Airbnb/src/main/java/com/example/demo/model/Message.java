@@ -29,10 +29,12 @@ public class Message implements Comparable<Message> {
 	private Long id;
 
 	@NonNull
-	private Long senderId;
+	@ManyToOne
+	private User sender;
 
 	@NonNull
-	private Long receiverId;
+	@ManyToOne
+	private User receiver;
 
 	@NonNull
 	private String text;

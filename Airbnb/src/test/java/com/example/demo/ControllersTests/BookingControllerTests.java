@@ -73,6 +73,8 @@ public class BookingControllerTests {
     @Test
     public void makeReservationShouldPassAndRedirect() throws Exception{
         AddBookingDTO addBookingDTO = new AddBookingDTO(LocalDate.now(), LocalDate.now().plusDays(1).plusDays(1));
+        Mockito.when(userService.getUserById(user.getId())).thenReturn(user);
+        Mockito.when(roomService.getRoomById(room.getId())).thenReturn(room);
 
         mvc.perform(MockMvcRequestBuilders
                 .post("/rooms/roomId={roomId}/bookings", room.getId())
@@ -85,7 +87,7 @@ public class BookingControllerTests {
 
         ArgumentCaptor<AddBookingDTO> addBookingCaptor = ArgumentCaptor.forClass(AddBookingDTO.class);
         Mockito.verify(bookingService, Mockito.times(1))
-                .makeReservation(Mockito.eq(room.getId()), addBookingCaptor.capture(),Mockito.eq(user.getId()));
+                .makeReservation(Mockito.eq(room), addBookingCaptor.capture(),Mockito.eq(user));
         Assert.assertEquals(addBookingDTO.getStartDate(), addBookingCaptor.getValue().getStartDate());
         Assert.assertEquals(addBookingDTO.getEndDate(), addBookingCaptor.getValue().getEndDate());
     }

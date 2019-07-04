@@ -47,14 +47,14 @@ public class UserService {
 		return userRepository.findAll().stream().collect(Collectors.toList());
 	}
 
-	public User getUserById(long id) throws ElementNotFoundException {
-		return userRepository.findById(id).orElseThrow(() -> new ElementNotFoundException("User not found"));
+	public User getUserById(long userId) throws ElementNotFoundException {
+		return userRepository.findById(userId).orElseThrow(() -> new ElementNotFoundException("User not found"));
 	}
 
-	public GetUserProfileDTO convertUserToDTO(User user) throws ElementNotFoundException {
+	public GetUserProfileDTO convertUserToDTO(User user) {
 		return new GetUserProfileDTO(user.viewAllNames(), user.getPhone(),
-				roomService.getUserRooms(user.getId()).stream().map(room -> roomService.convertRoomToDTO(room)).collect(Collectors.toList()),
-				reviewService.getAllReviewsForUser(user.getId()).stream().map(review -> reviewService.convertReviewToDTO(review)).collect(Collectors.toList()));
+				roomService.getUserRooms(user).stream().map(room -> roomService.convertRoomToDTO(room)).collect(Collectors.toList()),
+				reviewService.getAllReviewsForUser(user).stream().map(review -> reviewService.convertReviewToDTO(review)).collect(Collectors.toList()));
 	}
 
 	public void signUp(SignUpDTO signUpDTO, HttpSession session) throws BadRequestException, SignUpException, NoSuchAlgorithmException, UnsupportedEncodingException {
@@ -89,8 +89,7 @@ public class UserService {
 		session.invalidate();
 	}
 
-	public User changeInformation(long userId, EditProfileDTO editProfileDTO) throws ElementNotFoundException, NoSuchAlgorithmException, UnsupportedEncodingException, BadRequestException {
-		getUserById(userId);
+	public User changeInformation(User user, EditProfileDTO editProfileDTO) throws NoSuchAlgorithmException, UnsupportedEncodingException, BadRequestException {
 		if ( !this.isPasswordValid(editProfileDTO.getPassword()) || !this.isValidEmailAddress(editProfileDTO.getEmail())) {
 			throw new BadRequestException("Invalid email or password");
 		}
@@ -98,14 +97,13 @@ public class UserService {
 			throw new BadRequestException("Email is already used");
 		}
 
-		User user = new User(userId, editProfileDTO.getFirstName(),editProfileDTO.getLastName(),UserService.encryptPassword(editProfileDTO.getPassword()),editProfileDTO.getEmail(),
+		User newUser = new User(user.getId(), editProfileDTO.getFirstName(),editProfileDTO.getLastName(),UserService.encryptPassword(editProfileDTO.getPassword()),editProfileDTO.getEmail(),
 				editProfileDTO.getBirthDate(),editProfileDTO.getPhone(),null);
-		saveUserToDB(user);
-		return user;
+		saveUserToDB(newUser);
+		return newUser;
 	}
 
-	public List<Room> viewFavouriteRooms(long userId) throws ElementNotFoundException {
-		User user = getUserById(userId);
+	public List<Room> viewFavouriteRooms(User user) {
 		return user.getFavourites();
 	}
 

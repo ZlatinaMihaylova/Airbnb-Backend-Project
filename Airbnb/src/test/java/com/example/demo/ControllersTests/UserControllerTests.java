@@ -178,6 +178,7 @@ public class UserControllerTests {
     @Test
     public void changeInformationShouldPass() throws Exception{
         EditProfileDTO editProfileDTO = new EditProfileDTO("First", "Last", "password", "email", LocalDate.now().minusMonths(1), "phone");
+        Mockito.when(userService.getUserById(user.getId())).thenReturn(user);
 
         mvc.perform(MockMvcRequestBuilders.put("/changeInformation")
                 .session(session)
@@ -188,7 +189,7 @@ public class UserControllerTests {
 
         ArgumentCaptor<EditProfileDTO> editProfileCaptor = ArgumentCaptor.forClass(EditProfileDTO.class);
         Mockito.verify(userService, Mockito.times(1))
-                .changeInformation(Mockito.eq(user.getId()),  editProfileCaptor.capture());
+                .changeInformation(Mockito.eq(user),  editProfileCaptor.capture());
         Assert.assertEquals(editProfileDTO.getFirstName(), editProfileCaptor.getValue().getFirstName());
         Assert.assertEquals(editProfileDTO.getLastName(), editProfileCaptor.getValue().getLastName());
         Assert.assertEquals(editProfileDTO.getPassword(), editProfileCaptor.getValue().getPassword());
@@ -221,10 +222,10 @@ public class UserControllerTests {
 
     @Test
     public void viewFavouriteRoomsShouldReturnOneRoom() throws Exception{
-        Mockito.when(userService.viewFavouriteRooms(user.getId())).thenReturn(new LinkedList<>(Arrays.asList(room)));
+        Mockito.when(userService.viewFavouriteRooms(user)).thenReturn(new LinkedList<>(Arrays.asList(room)));
         Mockito.when(roomService.convertRoomToDTO(room))
                 .thenReturn(new GetListOfRoomDTO("1", room.getName(), city.getName(), 3.4, 3));
-
+        Mockito.when(userService.getUserById(user.getId())).thenReturn(user);
 
         mvc.perform(MockMvcRequestBuilders.get("/viewFavourites")
                 .session(session)
@@ -237,17 +238,15 @@ public class UserControllerTests {
                 .andExpect(jsonPath("$[0].city", Matchers.is(room.getCity().getName())))
                 .andExpect(jsonPath("$[0].rating", Matchers.is(3.4)))
                 .andExpect(jsonPath("$[0].timesRated", Matchers.is(3)));
-
-
     }
 
     @Test
     public void showMyBookingsShouldReturnOnBooking() throws Exception{
-        Mockito.when(bookingService.getAllUsersBookings(user.getId())).thenReturn(new LinkedList<>(Arrays.asList(booking)));
+        Mockito.when(bookingService.getAllUsersBookings(user)).thenReturn(new LinkedList<>(Arrays.asList(booking)));
         Mockito.when(bookingService.convertBookingToDTO(booking))
                 .thenReturn(new GetBookingInfoDTO(user.viewAllNames(), booking.getStartDate(), booking.getEndDate(),
                         new GetListOfRoomDTO("1", room.getName(), city.getName(), 3.4, 3)));
-
+        Mockito.when(userService.getUserById(user.getId())).thenReturn(user);
 
         mvc.perform(MockMvcRequestBuilders.get("/myBookings")
                 .session(session)
@@ -262,9 +261,5 @@ public class UserControllerTests {
                 .andExpect(jsonPath("$[0].getListOfRoomDTO.city", Matchers.is(room.getCity().getName())))
                 .andExpect(jsonPath("$[0].getListOfRoomDTO.rating", Matchers.is(3.4)))
                 .andExpect(jsonPath("$[0].getListOfRoomDTO.timesRated", Matchers.is(3)));
-
-
     }
-
-
 }

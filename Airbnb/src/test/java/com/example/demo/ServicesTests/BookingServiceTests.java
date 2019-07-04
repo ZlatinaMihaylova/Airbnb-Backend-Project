@@ -71,7 +71,7 @@ public class BookingServiceTests {
     public void init() {
         user = new User(1L, "FirstName", "LastName", "goodPassword1234", "email@gmail.com", LocalDate.now(),"1234",null );
         room = new Room(1L, "Room",
-                "Address", 5, 2,3,4,5, "Details", new LinkedList<>(), new City(),2L, new LinkedList<>());
+                "Address", 5, 2,3,4,5, "Details", new LinkedList<>(), new City(),1L, new LinkedList<>());
         bookings = new LinkedList<>(Arrays.asList(
                 new Booking(1L, LocalDate.now().plusDays(4), LocalDate.now().plusDays(6), user, room ),
                 new Booking(2L, LocalDate.now().plusDays(6), LocalDate.now().plusDays(10), user, room ),
@@ -82,14 +82,14 @@ public class BookingServiceTests {
     @Test
     public void getAllUsersBookings() {
         Mockito.when(bookingRepository.findByUserId(user.getId())).thenReturn(bookings);
-        Assert.assertEquals(bookings, bookingService.getAllUsersBookings(user.getId()));
+        Assert.assertEquals(bookings, bookingService.getAllUsersBookings(user));
     }
 
     @Test(expected = UnauthorizedException.class)
     public void makeReservationUnauthorised()throws ElementNotFoundException, BookingIsOverlapingException, UnauthorizedException, BadRequestException {
         AddBookingDTO roomBookingDTO = new AddBookingDTO(LocalDate.now().plusDays(4), LocalDate.now().plusDays(6));
         Mockito.when(roomServiceMock.getRoomById(room.getId())).thenReturn(room);
-        bookingService.makeReservation(room.getId(),roomBookingDTO, room.getUserId());
+        bookingService.makeReservation(room,roomBookingDTO, user);
     }
 
     @Test
@@ -97,10 +97,11 @@ public class BookingServiceTests {
         Mockito.when(roomServiceMock.getRoomById(room.getId())).thenReturn(room);
         Mockito.when(userServiceMock.getUserById(user.getId())).thenReturn(user);
 
+        User testUser = new User(10L, "FirstName", "LastName", "goodPassword1234", "email@gmail.com", LocalDate.now(),"1234",null);
         AddBookingDTO roomBookingDTO = new AddBookingDTO(LocalDate.now().plusDays(4), LocalDate.now().plusDays(6));
-        Booking expected = new Booking(1l, LocalDate.now().plusDays(4), LocalDate.now().plusDays(6), user,room);
+        Booking expected = new Booking(1l, LocalDate.now().plusDays(4), LocalDate.now().plusDays(6), testUser ,room);
 
-        bookingService.makeReservation(room.getId(),roomBookingDTO, user.getId());
+        bookingService.makeReservation(room,roomBookingDTO, testUser);
         ArgumentCaptor<Booking> argument = ArgumentCaptor.forClass(Booking.class);
         Mockito.verify(bookingRepository).saveAndFlush(argument.capture());
 
@@ -114,7 +115,7 @@ public class BookingServiceTests {
     public void removeAllBookingsFromRoom()throws ElementNotFoundException, BookingIsOverlapingException, UnauthorizedException, BadRequestException {
         Mockito.when(bookingRepository.findByRoomId(room.getId()))
                 .thenReturn(bookings);
-        bookingService.removeAllBookingsFromRoom(room.getId(), room.getUserId());
+        bookingService.removeAllBookingsFromRoom(room, user);
         Mockito.verify(bookingRepository).deleteAll(bookings);
     }
 

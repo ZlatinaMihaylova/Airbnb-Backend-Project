@@ -7,6 +7,7 @@ import java.util.Map.Entry;
 import com.example.demo.dto.SendMessageDTO;
 import com.example.demo.exceptions.ElementNotFoundException;
 import com.example.demo.exceptions.UnauthorizedException;
+import com.example.demo.model.User;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -25,67 +26,65 @@ public class MessageService {
 	@Autowired
 	private UserService userService;
 
-	public Map<Long, TreeSet<Message>> getUserAllMessages(long userId){
-		Map<Long, TreeSet<Message>> userAllMessages = new TreeMap<Long, TreeSet<Message>>();
+	public Map<User, TreeSet<Message>> getUserAllMessages(User user){
+		Map<User, TreeSet<Message>> userAllMessages = new HashMap<User, TreeSet<Message>>();
 
 		for (Message message : messageRepository.findAll()) {
-			Long otherUserId = null;
-			if (message.getSenderId().equals(userId)) {
-				otherUserId = message.getReceiverId();
+			User otherUser = null;
+			if (message.getSender().equals(user)) {
+				otherUser = message.getReceiver();
 			}
-			if (message.getReceiverId().equals(userId)) {
-				otherUserId = message.getSenderId();
+			if (message.getReceiver().equals(user)) {
+				otherUser = message.getSender();
 			}
 
-			if (otherUserId != null ) {
-				if ( userAllMessages.containsKey(otherUserId)) {
-					userAllMessages.get(otherUserId).add(message);
+			if (otherUser != null ) {
+				if ( userAllMessages.containsKey(otherUser)) {
+					userAllMessages.get(otherUser).add(message);
 				} else {
-					userAllMessages.put(otherUserId, new TreeSet<Message>((m1,m2) -> m1.getDateTime().compareTo(m2.getDateTime())));
-					userAllMessages.get(otherUserId).add(message);
+					userAllMessages.put(otherUser, new TreeSet<Message>((m1,m2) -> m1.getDateTime().compareTo(m2.getDateTime())));
+					userAllMessages.get(otherUser).add(message);
 				}
 			}
 		}
 		return userAllMessages;
 	}
 
-	public List<ChatListDTO> getAllMessagesForMessagePage(long userId) throws ElementNotFoundException {
-		Map<Long, TreeSet<Message>> userAllMessages = new HashMap<Long, TreeSet<Message>>();
-		userAllMessages = this.getUserAllMessages(userId);
+	public List<ChatListDTO> getAllMessagesForMessagePage(User user) {
+		Map<User, TreeSet<Message>> userAllMessages = new HashMap<User, TreeSet<Message>>();
+		userAllMessages = this.getUserAllMessages(user);
 		List<ChatListDTO> messagesList = new LinkedList<>();
-		for (Entry<Long, TreeSet<Message>> entry: userAllMessages.entrySet()) {
+		for (Entry<User, TreeSet<Message>> entry: userAllMessages.entrySet()) {
 			Message message = entry.getValue().last();
-			messagesList.add(new ChatListDTO(userService.getUserById(userId).viewAllNames()
+			messagesList.add(new ChatListDTO(user.viewAllNames()
 					,message.getText(),message.getDateTime()));
 		}
 		return messagesList;
 	}
 
-	public List<ChatWithUserDTO> getMessagesWithUserById(long userId, long otherUserId) throws UnauthorizedException, ElementNotFoundException{
-		if ( userId == otherUserId) {
+	public List<ChatWithUserDTO> getMessagesWithUser(User user, User otherUser) throws UnauthorizedException, ElementNotFoundException{
+		if ( user.getId() == otherUser.getId()) {
 			throw new UnauthorizedException("User don't have messages with himself!");
 		}
 		List<ChatWithUserDTO> chat = new LinkedList<>();
-		Set<Message> messages =  getUserAllMessages(userId).get(otherUserId);
+		Set<Message> messages =  getUserAllMessages(user).get(otherUser);
 		if ( messages == null) {
 			throw new ElementNotFoundException("No messages with this user!");
 		}
 
 		for ( Message m : messages) {
-			chat.add(new ChatWithUserDTO( userService.getUserById(userId).viewAllNames(),
+			chat.add(new ChatWithUserDTO( user.viewAllNames(),
 					m.getText(), m.getDateTime()));
 		}
 		return chat;
 	}
 
-	public void sendMessage(long senderId, long receiverId, SendMessageDTO sendMessageDTO) throws UnauthorizedException, ElementNotFoundException {
-		if ( senderId == receiverId) {
+	public void sendMessage(User sender, User receiver, SendMessageDTO sendMessageDTO) throws UnauthorizedException {
+		if ( sender.getId() == receiver.getId()) {
 			throw new UnauthorizedException("User can not send message to himself!");
 		}
 		LocalDateTime time = LocalDateTime.now();
-		userService.getUserById(senderId);
-		userService.getUserById(receiverId);
-		Message message = new Message(null,senderId,receiverId, sendMessageDTO.getText(), time);
+		Message message = new Message(null,sender, receiver, sendMessageDTO.getText(), time);
 		messageRepository.saveAndFlush(message);
 	}
 

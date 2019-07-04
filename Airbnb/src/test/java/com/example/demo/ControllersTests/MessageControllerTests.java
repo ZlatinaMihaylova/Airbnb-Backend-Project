@@ -65,7 +65,7 @@ public class MessageControllerTests {
         sender = new User(1L, "Sender", "LastName", "goodPassword1234", "email@gmail.com", LocalDate.now(), "1234", null);
         receiver = new User(2L, "Receiver", "LastName", "goodPassword1234", "email@gmail.com", LocalDate.now(), "1234", null);
         localDateTime = LocalDateTime.of(2017,12,12, 12,12, 12);
-        message = new Message(1L, sender.getId(),receiver.getId(), "Text", localDateTime );
+        message = new Message(1L, sender,receiver, "Text", localDateTime );
 
         mockHttpServletRequest.setSession(session);
         session = new MockHttpSession();
@@ -74,9 +74,9 @@ public class MessageControllerTests {
 
     @Test
     public void getAllMessagesShouldReturnOnlyOneMessage() throws Exception {
-        Mockito.when(messageService.getAllMessagesForMessagePage(sender.getId()))
+        Mockito.when(messageService.getAllMessagesForMessagePage(sender))
                 .thenReturn(new LinkedList<>(Arrays.asList(new ChatListDTO(receiver.viewAllNames(), message.getText(), localDateTime))));
-
+        Mockito.when(userService.getUserById(sender.getId())).thenReturn(sender);
         mvc.perform(MockMvcRequestBuilders
                 .get("/messages")
                 .session(session)
@@ -91,9 +91,10 @@ public class MessageControllerTests {
 
     @Test
     public void getMessagesWithUserByIdReturnOnlyOneMessage() throws Exception {
-        Mockito.when(messageService.getMessagesWithUserById(sender.getId(), receiver.getId()))
+        Mockito.when(messageService.getMessagesWithUser(sender, receiver))
                 .thenReturn(new LinkedList<>(Arrays.asList(new ChatWithUserDTO(sender.viewAllNames(), message.getText(), localDateTime))));
-
+        Mockito.when(userService.getUserById(sender.getId())).thenReturn(sender);
+        Mockito.when(userService.getUserById(receiver.getId())).thenReturn(receiver);
         mvc.perform(MockMvcRequestBuilders
                 .get("/messages/userId={userId}", receiver.getId())
                 .session(session)

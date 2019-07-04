@@ -63,29 +63,30 @@ public class UserController {
 	}
 
 	@GetMapping("/profile")
-	public ModelAndView getLoggedUserProfile(HttpServletRequest request) throws UnauthorizedException, ElementNotFoundException {
+	public ModelAndView getLoggedUserProfile(HttpServletRequest request) throws UnauthorizedException {
 		long userId = UserService.authentication(request);
 		return new ModelAndView("redirect:/users/userId=" + userId);
 	}
 
 	@PutMapping("/changeInformation")
-	public ModelAndView changeInformation(@RequestBody @Valid EditProfileDTO editProfileDTO, HttpServletRequest request) throws BadRequestException,UnauthorizedException, ElementNotFoundException, NoSuchAlgorithmException, UnsupportedEncodingException {
+	public ModelAndView changeInformation(@RequestBody @Valid EditProfileDTO editProfileDTO, HttpServletRequest request)
+			throws BadRequestException,UnauthorizedException, ElementNotFoundException, NoSuchAlgorithmException, UnsupportedEncodingException {
 		long userId = UserService.authentication(request);
-		userService.changeInformation(userId, editProfileDTO);
+		userService.changeInformation(userService.getUserById(userId), editProfileDTO);
 		return new ModelAndView("redirect:/users/userId=" + userId);
 	}
 
 
 	@GetMapping("/viewFavourites")
 	public List<GetListOfRoomDTO> viewFavouriteRooms(HttpServletRequest request) throws UnauthorizedException, ElementNotFoundException{
-		long id = UserService.authentication(request);
-		return userService.viewFavouriteRooms(id).stream().map(room -> roomService.convertRoomToDTO(room)).collect(Collectors.toList());
+		long userId = UserService.authentication(request);
+		return userService.viewFavouriteRooms(userService.getUserById(userId)).stream().map(room -> roomService.convertRoomToDTO(room)).collect(Collectors.toList());
 	}
 
 	@GetMapping("/myBookings")
-	public Set<GetBookingInfoDTO> showMyBookings(HttpServletRequest request) throws UnauthorizedException{
-		long id = UserService.authentication(request);
-		return bookingService.getAllUsersBookings(id).stream().map(booking -> bookingService.convertBookingToDTO(booking)).collect(Collectors.toSet());
+	public Set<GetBookingInfoDTO> showMyBookings(HttpServletRequest request) throws ElementNotFoundException, UnauthorizedException{
+		long userId = UserService.authentication(request);
+		return bookingService.getAllUsersBookings(userService.getUserById(userId)).stream().map(booking -> bookingService.convertBookingToDTO(booking)).collect(Collectors.toSet());
 	}
 
 }

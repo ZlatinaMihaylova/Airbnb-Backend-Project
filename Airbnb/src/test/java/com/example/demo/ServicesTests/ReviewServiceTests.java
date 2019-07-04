@@ -74,14 +74,14 @@ public class ReviewServiceTests {
     public void getAllReviewsByRoomId() throws ElementNotFoundException {
         Mockito.when(reviewRepository.findByRoomId(room.getId())).thenReturn(reviews);
         Mockito.when(roomServiceMock.getRoomById(room.getId())).thenReturn(room);
-        Assert.assertEquals(reviews, reviewService.getAllReviewsByRoomId(room.getId()));
+        Assert.assertEquals(reviews, reviewService.getAllReviewsByRoom(room));
     }
 
     @Test(expected = UnauthorizedException.class)
     public void addReviewException() throws ElementNotFoundException, UnauthorizedException,BadRequestException {
         Mockito.when(roomServiceMock.getRoomById(room.getId())).thenReturn(room);
         user.setId(2L);
-        reviewService.addReviewForRoom(user.getId(),room.getId(), new AddReviewDTO());
+        reviewService.addReviewForRoom(user,room, new AddReviewDTO());
     }
 
 
@@ -90,7 +90,7 @@ public class ReviewServiceTests {
         Mockito.when(roomServiceMock.getRoomById(room.getId())).thenReturn(room);
         Mockito.when(userServiceMock.getUserById(user.getId())).thenReturn(user);
         AddReviewDTO addReviewDTO = new AddReviewDTO( "review", 6);
-        reviewService.addReviewForRoom(user.getId(),room.getId(), addReviewDTO);
+        reviewService.addReviewForRoom(user,room, addReviewDTO);
     }
 
     @Test(expected = BadRequestException.class)
@@ -98,7 +98,7 @@ public class ReviewServiceTests {
         Mockito.when(roomServiceMock.getRoomById(room.getId())).thenReturn(room);
         Mockito.when(userServiceMock.getUserById(user.getId())).thenReturn(user);
         AddReviewDTO addReviewDTO = new AddReviewDTO( "review", 0);
-        reviewService.addReviewForRoom(user.getId(),room.getId(), addReviewDTO);
+        reviewService.addReviewForRoom(user,room, addReviewDTO);
     }
 
     @Test
@@ -106,7 +106,7 @@ public class ReviewServiceTests {
         Mockito.when(roomServiceMock.getRoomById(room.getId())).thenReturn(room);
         Mockito.when(userServiceMock.getUserById(user.getId())).thenReturn(user);
         Review expected = new Review(1L,LocalDateTime.now(), "review",user,room, 5);
-        reviewService.addReviewForRoom(user.getId(),room.getId(), new AddReviewDTO( "review", 5));
+        reviewService.addReviewForRoom(user,room, new AddReviewDTO( "review", 5));
 
         ArgumentCaptor<Review> argument = ArgumentCaptor.forClass(Review.class);
         Mockito.verify(reviewRepository).saveAndFlush(argument.capture());
@@ -135,7 +135,7 @@ public class ReviewServiceTests {
     public void removeAllReviewsForRoom() {
         Mockito.when(reviewRepository.findByRoomId(room.getId()))
                 .thenReturn(reviews);
-        reviewService.removeAllReviewsForRoom(room.getId());
+        reviewService.removeAllReviewsForRoom(room);
         Mockito.verify(reviewRepository).deleteAll(reviews);
     }
 
@@ -143,7 +143,7 @@ public class ReviewServiceTests {
     public void getAllReviewsForUser() throws ElementNotFoundException {
         Mockito.when(reviewRepository.findAll())
                 .thenReturn(reviews);
-        Assert.assertEquals(reviews, reviewService.getAllReviewsForUser(userWithRoom.getId()));
+        Assert.assertEquals(reviews, reviewService.getAllReviewsForUser(userWithRoom));
     }
 
     @Test
